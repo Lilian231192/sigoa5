@@ -1,0 +1,332 @@
+/* =========================================================
+   SIGOA · Sistema de diseño "Plano de día"
+   Estilos globales: colores, tipografías, cuadrícula,
+   líneas, botones, campos, chips y barra tipo cota.
+   ========================================================= */
+
+/* ---------- Tipografías locales (funcionan sin internet) ---------- */
+@import '@fontsource/figtree/latin-400.css';
+@import '@fontsource/figtree/latin-500.css';
+@import '@fontsource/figtree/latin-600.css';
+@import '@fontsource/figtree/latin-700.css';
+@import '@fontsource/figtree/latin-800.css';
+
+/* ---------- Componentes compartidos de las pantallas ---------- */
+@import './componentes.css';
+@import './animaciones.css';
+
+/* ---------- Variables (tokens) ---------- */
+:root {
+  /* Colores de marca */
+  --sg-negro: #161616;
+  --sg-amarillo: #fac82b;
+  --sg-gris: #878787;
+  --sg-papel: #fafaf7;
+  --sg-blanco: #ffffff;
+
+  /* Estados */
+  --sg-verde: #1f9d6b;
+  --sg-rojo: #9b2525;
+
+  /* Líneas tipo plano */
+  --sg-linea: rgba(22, 22, 22, 0.2);
+  --sg-linea-suave: rgba(22, 22, 22, 0.08);
+  --sg-cuadricula: rgba(22, 22, 22, 0.035);
+
+  /* Tipografías */
+  --sg-sans: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sg-mono: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Medidas */
+  --sg-margen: 48px;
+  --sg-transicion: 0.18s ease;
+}
+
+/* ---------- Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+/* Reserva siempre el espacio de la barra de scroll: así la página (y el menú de arriba)
+   no se recorre a los lados cuando una pantalla es larga y la otra no */
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sg-sans);
+  font-size: 15px;
+  color: var(--sg-negro);
+  background-color: var(--sg-papel);
+  /* Papel milimétrico (igual que el login): cuadros finos de 10px
+     y una línea un poco más marcada cada 50px */
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.025) 1px, transparent 1px),
+    linear-gradient(to right, rgba(0, 0, 0, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 10px 10px, 10px 10px, 50px 50px, 50px 50px;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--sg-sans);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--sg-negro);
+  margin: 0;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--sg-amarillo);
+  color: var(--sg-negro);
+}
+
+/* ---------- Etiquetas técnicas (monoespaciadas) ---------- */
+.sg-label {
+  font-family: var(--sg-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sg-gris);
+}
+
+.sg-mono {
+  font-family: var(--sg-mono);
+}
+
+/* ---------- Líneas ---------- */
+.sg-linea-h {
+  border: 0;
+  border-top: 1px solid var(--sg-linea);
+  margin: 0;
+}
+
+.sg-linea-v {
+  border-left: 1px solid var(--sg-linea);
+}
+
+/* Marcas de registro en las 4 esquinas de una lámina */
+.sg-lamina {
+  position: relative;
+}
+
+.sg-lamina > .sg-marca {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+}
+
+.sg-marca::before,
+.sg-marca::after {
+  content: '';
+  position: absolute;
+  background: var(--sg-linea);
+}
+
+.sg-marca::before {
+  left: 50%;
+  top: 0;
+  width: 1px;
+  height: 100%;
+}
+
+.sg-marca::after {
+  top: 50%;
+  left: 0;
+  height: 1px;
+  width: 100%;
+}
+
+.sg-marca--si { top: 16px; left: 16px; }
+.sg-marca--sd { top: 16px; right: 16px; }
+.sg-marca--ii { bottom: 16px; left: 16px; }
+.sg-marca--id { bottom: 16px; right: 16px; }
+
+/* ---------- Botones ---------- */
+.sg-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 48px;
+  padding: 0 24px;
+  border: 1px solid var(--sg-negro);
+  border-radius: 0;
+  background: var(--sg-negro);
+  color: var(--sg-blanco);
+  font-family: var(--sg-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background var(--sg-transicion), color var(--sg-transicion);
+}
+
+.sg-btn:hover:not(:disabled) {
+  background: #2b2b2b;
+}
+
+.sg-btn:disabled {
+  cursor: not-allowed;
+}
+
+.sg-btn--contorno {
+  background: transparent;
+  color: var(--sg-negro);
+}
+
+.sg-btn--contorno:hover:not(:disabled) {
+  background: var(--sg-negro);
+  color: var(--sg-blanco);
+}
+
+.sg-btn--bloque {
+  width: 100%;
+}
+
+.sg-btn svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* ---------- Campos de formulario (solo línea inferior) ---------- */
+.sg-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sg-campo__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.sg-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 36px 0 0;
+  border: 0;
+  border-bottom: 1px solid var(--sg-linea);
+  border-radius: 0;
+  background: transparent;
+  color: var(--sg-negro);
+  font-family: var(--sg-sans);
+  font-size: 16px;
+  outline: none;
+  transition: border-color var(--sg-transicion);
+}
+
+.sg-input::placeholder {
+  color: #b4b4b0;
+}
+
+.sg-input:focus {
+  border-bottom: 2px solid var(--sg-negro);
+}
+
+.sg-input-icono {
+  position: absolute;
+  right: 0;
+  display: inline-flex;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--sg-negro);
+  cursor: pointer;
+}
+
+.sg-input-icono svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* ---------- Mensajes ---------- */
+.sg-alerta {
+  padding: 12px 14px;
+  border-left: 3px solid var(--sg-rojo);
+  background: rgba(155, 37, 37, 0.06);
+  color: var(--sg-rojo);
+  font-size: 14px;
+}
+
+/* ---------- Chips de estado ---------- */
+.sg-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--sg-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sg-negro);
+}
+
+.sg-chip::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--sg-gris);
+}
+
+.sg-chip--activo::before { background: var(--sg-verde); }
+.sg-chip--proceso::before { background: var(--sg-amarillo); }
+.sg-chip--pausado::before { background: var(--sg-rojo); }
+ 
+/* ---------- Barra de avance (amarilla con rayas) ---------- */
+/* Uso: <div class="sg-cota"><span class="sg-cota__relleno" style="width: 75%"></span></div> */
+.sg-cota {
+  position: relative;
+  height: 8px;
+  min-width: 80px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: rgba(22, 22, 22, 0.1);
+}
+
+.sg-cota__relleno {
+  position: relative;
+  display: block;
+  height: 100%;
+  background: var(--sg-amarillo);
+  transition: width 0.4s ease;
+}
+
+.sg-cota__relleno::after {
+  /* rayas diagonales */
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.3) 25%, transparent 25%, transparent 50%,
+    rgba(255, 255, 255, 0.3) 50%, rgba(255, 255, 255, 0.3) 75%, transparent 75%, transparent);
+  background-size: 8px 8px;
+}
+
+/* ---------- Utilidades responsivas ---------- */
+@media (max-width: 768px) {
+  :root {
+    --sg-margen: 20px;
+  }
+}

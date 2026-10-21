@@ -1,0 +1,149 @@
+/* ===== Campanita de notificaciones del App Shell ===== */
+
+.icono-btn { border-radius: 50%; transition: background var(--sg-transicion); }
+.icono-btn:hover, .icono-btn--abierto { background: rgba(250, 200, 43, 0.22); }
+.icono-btn__punto {
+  position: absolute; top: 4px; right: 4px; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--sg-amarillo);
+  animation: notis-latir 2s ease-in-out infinite;
+}
+/* Número de notificaciones sin leer */
+.icono-btn__contador {
+  position: absolute; top: -2px; right: -4px;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--sg-amarillo); color: var(--sg-negro);
+  border: 2px solid var(--sg-papel);
+  font-size: 10px; font-weight: 800; line-height: 1;
+  animation: notis-entrar-contador 0.35s cubic-bezier(0.22, 0.7, 0.2, 1);
+}
+@keyframes notis-latir { 50% { box-shadow: 0 0 0 4px rgba(250, 200, 43, 0.35); } }
+@keyframes notis-entrar-contador { from { transform: scale(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ---------- Panel de notificaciones (mismo comportamiento que el menú de perfil) ---------- */
+.notis { position: relative; }
+.notis__panel {
+  position: absolute; right: -8px; top: calc(100% + 12px); z-index: 2;
+  width: 380px; max-height: min(560px, calc(100dvh - 110px));
+  display: flex; flex-direction: column;
+  background: var(--sg-papel); border: 1px solid rgba(22, 22, 22, 0.45); border-radius: 10px;
+  box-shadow: 0 16px 40px rgba(22, 22, 22, 0.14);
+  overflow: hidden;
+  transform-origin: top right;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transform: translateY(-8px) scale(0.96);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+}
+.notis__panel--abierto {
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transform: none;
+  transition: opacity 0.22s ease, transform 0.28s cubic-bezier(0.22, 0.7, 0.2, 1), visibility 0s;
+}
+
+.notis__cabecera {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 16px 14px; border-bottom: 1px solid var(--sg-linea);
+}
+.notis__cabecera strong { display: block; font-size: 16px; font-weight: 700; }
+.notis__cabecera small { font-size: 12px; color: var(--sg-gris); }
+
+.notis__enlace {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font-family: var(--sg-sans); font-size: 13px; font-weight: 600; color: var(--sg-negro);
+  text-decoration: underline; text-decoration-color: var(--sg-amarillo); text-decoration-thickness: 2px; text-underline-offset: 3px;
+}
+.notis__enlace:hover { color: var(--sg-gris); }
+.notis__enlace--peligro { color: #b03434; text-decoration-color: rgba(194, 59, 59, 0.45); }
+.notis__enlace--peligro:hover { color: #8a2222; }
+
+/* "Marcar todas" y "Eliminar todas", una debajo de la otra a la derecha */
+.notis__acciones { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
+
+/* Invitación a activar */
+.notis__activar {
+  display: flex; gap: 12px; margin: 12px; padding: 14px;
+  background: #fffaea; border: 1px solid rgba(214, 167, 20, 0.45); border-radius: 8px;
+}
+.notis__activar-icono {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%; background: var(--sg-amarillo);
+}
+.notis__activar strong { font-size: 14px; }
+.notis__activar p { margin: 4px 0 10px; font-size: 13px; line-height: 1.4; color: #4a4a48; }
+.notis__nota {
+  margin: 12px; padding: 12px 14px; border-radius: 8px;
+  background: rgba(22, 22, 22, 0.04); font-size: 13px; line-height: 1.45; color: #4a4a48;
+}
+
+/* Lista: cada fila tiene la notificación y su botecito para borrarla */
+.noti-fila { position: relative; }
+.noti-fila--saliendo { animation: notis-salir 0.22s ease forwards; pointer-events: none; }
+@keyframes notis-salir { to { opacity: 0; transform: translateX(40px); } }
+
+.noti__borrar {
+  position: absolute; right: 8px; bottom: 10px;
+  display: inline-flex; padding: 6px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--sg-gris); cursor: pointer;
+  opacity: 0; transition: opacity var(--sg-transicion), background var(--sg-transicion), color var(--sg-transicion);
+}
+.noti__borrar app-icono { width: 18px; height: 18px; }
+.noti-fila:hover .noti__borrar, .noti__borrar:focus-visible { opacity: 1; }
+.noti__borrar:hover { background: rgba(194, 59, 59, 0.1); color: #b03434; }
+/* En celular no hay "hover": el botecito se ve siempre */
+@media (hover: none) { .noti__borrar { opacity: 0.7; } }
+
+/* Lista */
+.notis__lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; overscroll-behavior: contain; }
+.noti {
+  position: relative; display: flex; align-items: flex-start; gap: 12px; width: 100%;
+  padding: 14px 32px 14px 16px; border: 0; border-bottom: 1px solid var(--sg-linea-suave);
+  background: transparent; text-align: left; cursor: pointer;
+  font-family: var(--sg-sans); color: var(--sg-negro);
+  transition: background var(--sg-transicion);
+}
+.noti:hover { background: rgba(22, 22, 22, 0.035); }
+.noti--nueva { background: rgba(250, 200, 43, 0.1); }
+.noti--nueva:hover { background: rgba(250, 200, 43, 0.18); }
+
+.noti__icono {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%;
+}
+.noti__icono app-icono { width: 18px; height: 18px; }
+.noti__icono--amarillo { background: rgba(250, 200, 43, 0.3); }
+.noti__icono--verde    { background: rgba(31, 157, 107, 0.15); color: #1f7a55; }
+.noti__icono--azul     { background: rgba(47, 109, 181, 0.13); color: #2f6db5; }
+.noti__icono--rojo     { background: rgba(194, 59, 59, 0.13); color: #b03434; }
+.noti__icono--negro    { background: rgba(22, 22, 22, 0.08); }
+
+.noti__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.noti__texto strong { font-size: 14px; font-weight: 700; }
+.noti__texto span { font-size: 13px; line-height: 1.4; color: #4a4a48; overflow-wrap: anywhere; }
+.noti__texto small { margin-top: 2px; font-size: 12px; color: var(--sg-gris); }
+.noti--nueva .noti__texto small { color: var(--sg-negro); font-weight: 600; }
+
+.noti__punto {
+  position: absolute; top: 20px; right: 14px; width: 8px; height: 8px;
+  border-radius: 50%; background: var(--sg-amarillo); box-shadow: 0 0 0 2px rgba(22, 22, 22, 0.12);
+}
+
+.notis__vacio {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 36px 24px; text-align: center; color: var(--sg-gris);
+}
+.notis__vacio app-icono { width: 30px; height: 30px; }
+.notis__vacio p { margin: 0; font-size: 13px; line-height: 1.5; }
+
+@media (prefers-reduced-motion: reduce) {
+  .notis__panel, .icono-btn__punto, .icono-btn__contador { transition: none !important; animation: none !important; }
+}
+
+/* Celular: el panel de notificaciones ocupa el ancho de la pantalla */
+@media (max-width: 640px) {
+  .notis { position: static; }
+  .notis__panel {
+    position: fixed; top: 72px; left: 12px; right: 12px; width: auto;
+    max-height: calc(100dvh - 72px - 84px);
+    transform-origin: top center;
+  }
+}

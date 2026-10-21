@@ -1,0 +1,78 @@
+/* ===== Proyectos · Administrador ===== */
+
+.error { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.cargando { opacity: 0.45; }
+
+/* ---------- Tabla ---------- */
+.nombre { font-size: 16px; font-weight: 700; }
+.sub-movil { display: none; }
+.gris { color: var(--sg-gris); }
+.centro { text-align: center; }
+.fecha { font-size: 13px; font-weight: 600; color: var(--sg-gris); white-space: nowrap; }
+.acciones { width: 44px; text-align: right; }
+
+.avance { display: flex; align-items: center; gap: 12px; min-width: 150px; }
+.avance .sg-cota { flex: 1; }
+.avance__numero { width: 40px; font-weight: 700; text-align: right; }
+
+.enlace {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: 700 15px var(--sg-sans); color: var(--sg-negro); text-decoration: underline; text-underline-offset: 4px;
+}
+
+/* ---------- Ficha lateral ---------- */
+.sg-lateral .sg-chip { margin-top: 10px; }
+
+.ficha-avance { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 18px; margin-bottom: 22px; }
+.ficha-avance strong { grid-row: span 2; font-size: 44px; font-weight: 800; letter-spacing: -0.04em; }
+
+.ficha-datos { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin: 0; padding: 18px 0; border-top: 1px solid var(--sg-fuerte); border-bottom: 1px solid var(--sg-fuerte); }
+.ficha-datos .completo { grid-column: 1 / -1; }
+.ficha-datos dd { margin: 4px 0 0; font-weight: 600; }
+
+.ficha-titulo { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 26px 0 8px; }
+.ficha-titulo h3 { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.ficha-obra { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--sg-suave); }
+.ficha-obra__datos { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.ficha-obra__datos strong { font-size: 16px; }
+.ficha-obra__acciones { display: flex; }
+
+.ficha-enlaces { display: flex; flex-direction: column; }
+.ficha-enlaces button {
+  display: flex; align-items: center; gap: 12px; padding: 14px 4px;
+  border: 0; border-bottom: 1px solid var(--sg-suave); background: none; cursor: pointer;
+  font: 600 15px var(--sg-sans); color: var(--sg-negro); text-align: left;
+}
+.ficha-enlaces button app-icono:last-child { margin-left: auto; color: var(--sg-gris); }
+.ficha-enlaces button:hover { background: rgba(250, 200, 43, 0.12); }
+
+.peligro-texto { margin-right: auto; color: var(--sg-rojo); border-color: var(--sg-rojo); }
+.peligro-texto:hover:not(:disabled) { background: var(--sg-rojo); color: var(--sg-blanco); }
+
+.rango { width: 100%; height: 44px; accent-color: var(--sg-amarillo); }
+.rango:disabled { opacity: 0.4; }
+.ayuda { font-size: 12px; color: var(--sg-gris); }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1180px) {
+  .col-ocultable { display: none; }
+  .sub-movil { display: block; margin-top: 2px; font-size: 13px; color: var(--sg-gris); }
+}
+
+/* En celular cada fila se vuelve una tarjeta */
+@media (max-width: 640px) {
+  .sg-tabla thead { display: none; }
+  .sg-tabla tbody tr {
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 12px;
+    padding: 16px 0; border-bottom: 1px solid var(--sg-suave);
+  }
+  .sg-tabla td { padding: 0; border: 0; }
+  .sg-tabla td.centro { display: none; }
+  .sg-tabla td:nth-child(1) { grid-column: 1; grid-row: 1; }
+  .sg-tabla td:nth-child(2) { grid-column: 1; grid-row: 2; }
+  .sg-tabla td:nth-child(6) { grid-column: 1 / -1; grid-row: 3; }
+  .sg-tabla td:nth-child(7) { grid-column: 1; grid-row: 4; }
+  .sg-tabla td.acciones { grid-column: 2; grid-row: 1 / 3; }
+  .ficha-datos { grid-template-columns: 1fr; }
+}

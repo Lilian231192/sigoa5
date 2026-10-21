@@ -1,0 +1,25 @@
+/* ===== Obras · Arquitecto =====
+   La base del diseño viene de admin/obras/obras.css (modal central, galería y visor).
+   Aquí solo va lo propio del arquitecto. */
+
+.alerta-texto { color: var(--sg-rojo); }
+.sg-indicador small.alerta-texto { color: var(--sg-rojo); }
+.fecha.alerta-texto { color: var(--sg-rojo); }
+.ayuda { display: block; font-size: 12px; color: var(--sg-gris); }
+
+/* ---------- Actualizar avance rápido ---------- */
+.avance-rapido {
+  display: flex; flex-direction: column; gap: 8px; padding: 18px 20px;
+  border: 1px solid var(--sg-amarillo); border-radius: 8px; background: rgba(250, 200, 43, 0.08);
+}
+.avance-rapido__cabeza { display: flex; justify-content: space-between; align-items: baseline; }
+.avance-rapido__cabeza strong { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; }
+.avance-rapido__marcas {
+  display: flex; justify-content: space-between; margin-top: -6px;
+  font-size: 11px; font-weight: 600; color: var(--sg-gris);
+}
+.avance-rapido .sg-btn { align-self: flex-end; }
+
+@media (max-width: 640px) {
+  .avance-rapido .sg-btn { align-self: stretch; }
+}

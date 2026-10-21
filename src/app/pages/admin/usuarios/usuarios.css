@@ -1,0 +1,133 @@
+/* ===== Usuarios · Administrador ===== */
+
+.error { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.cargando { opacity: 0.45; pointer-events: none; }
+.centro { text-align: center; }
+.alerta-texto { color: var(--sg-rojo); }
+
+/* ---------- Tipo (pestañas) y filtro de acceso ---------- */
+.filtros { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; }
+.filtros .sg-tabs { flex: 1; }
+
+.segmento {
+  display: inline-flex; margin-bottom: 16px; padding: 3px;
+  border: 1px solid var(--sg-fuerte); border-radius: 20px;
+}
+.segmento button {
+  padding: 6px 14px; border: 0; border-radius: 16px; background: none; cursor: pointer;
+  font: 600 13px var(--sg-sans); color: var(--sg-gris); white-space: nowrap;
+}
+.segmento button small { margin-left: 4px; font-weight: 500; }
+.segmento button.activo { background: var(--sg-amarillo); color: var(--sg-negro); }
+
+/* ---------- Tabla ---------- */
+.persona { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.persona > div { min-width: 0; }
+
+.avatar {
+  display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%;
+  border: 1px solid var(--sg-negro); background: transparent;
+  font-size: 14px; font-weight: 800; letter-spacing: 0.02em; color: var(--sg-negro);
+}
+.avatar--grande { width: 56px; height: 56px; font-size: 18px; background: var(--sg-amarillo); border-color: var(--sg-amarillo); }
+
+.nombre { display: block; font-size: 16px; font-weight: 700; }
+.sub { display: block; margin-top: 2px; font-size: 13px; color: var(--sg-gris); overflow-wrap: anywhere; }
+.dato { font-size: 14px; color: var(--sg-gris); }
+.acciones { width: 44px; text-align: right; }
+
+tr.inactivo .nombre, tr.inactivo .avatar { opacity: 0.5; }
+
+.enlace {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: 700 15px var(--sg-sans); color: var(--sg-negro); text-decoration: underline; text-underline-offset: 4px;
+}
+.enlace--chico { align-self: flex-start; margin-top: 6px; font-size: 12px; }
+
+/* ---------- Ficha (modal central) ---------- */
+.ficha { width: min(980px, calc(100vw - 32px)); max-height: calc(100dvh - 64px); }
+
+.ficha__persona { display: flex; align-items: center; gap: 16px; }
+.ficha__titulo { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
+
+.ficha__cuerpo {
+  display: grid; grid-template-columns: minmax(260px, 320px) minmax(0, 1fr); gap: 36px; align-items: start;
+}
+
+.ficha__resumen { display: flex; flex-direction: column; gap: 22px; }
+
+.ficha-datos {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin: 0; padding-bottom: 16px;
+  border-bottom: 1px solid var(--sg-fuerte);
+}
+.ficha-datos .completo { grid-column: 1 / -1; }
+.ficha-datos dd { margin: 4px 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.ficha-datos a { color: var(--sg-negro); text-underline-offset: 3px; }
+
+.bloque { display: flex; flex-direction: column; gap: 10px; }
+.bloque__titulo { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.bloque__titulo small {
+  margin-left: 6px; padding: 2px 8px; border-radius: 12px;
+  background: var(--sg-suave); color: var(--sg-gris); font-size: 12px;
+}
+
+.estado-rapido { display: flex; flex-wrap: wrap; gap: 10px; }
+.ayuda { display: block; margin: 0; font-size: 12px; color: var(--sg-gris); }
+.ayuda.alerta-texto { color: var(--sg-rojo); }
+
+.ficha__conceptos { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+.tabla-conceptos { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabla-conceptos th {
+  padding: 0 8px 8px; border-bottom: 1px solid var(--sg-fuerte); text-align: left;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sg-gris);
+}
+.tabla-conceptos td { padding: 10px 8px; border-bottom: 1px solid var(--sg-suave); vertical-align: middle; }
+.tabla-conceptos td:first-child, .tabla-conceptos th:first-child { padding-left: 0; }
+.tabla-conceptos td strong { display: block; }
+.tabla-conceptos td small { display: block; margin-top: 2px; font-size: 13px; color: var(--sg-gris); }
+
+.avance { display: flex; align-items: center; gap: 10px; min-width: 120px; }
+.avance .sg-cota { flex: 1; }
+.avance__numero { width: 38px; font-weight: 700; text-align: right; }
+
+.ficha-enlace {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 4px;
+  border: 0; border-bottom: 1px solid var(--sg-suave);
+  background: none; cursor: pointer; font: 600 15px var(--sg-sans); color: var(--sg-negro); text-align: left;
+}
+.ficha-enlace app-icono:last-child { margin-left: auto; color: var(--sg-gris); }
+.ficha-enlace:hover { background: rgba(250, 200, 43, 0.12); }
+
+.peligro-texto { margin-right: auto; color: var(--sg-rojo); border-color: rgba(198, 40, 40, 0.3); }
+.peligro-texto:hover:not(:disabled) { background: var(--sg-rojo); color: var(--sg-blanco); }
+
+/* ---------- Formulario ---------- */
+.separador { padding-top: 14px; border-top: 1px solid var(--sg-suave); }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1180px) {
+  .col-ocultable { display: none; }
+}
+
+@media (max-width: 900px) {
+  .ficha__cuerpo { grid-template-columns: 1fr; gap: 28px; }
+}
+
+@media (max-width: 640px) {
+  .filtros { flex-direction: column; align-items: stretch; }
+  .segmento { align-self: flex-start; }
+  .sg-tabla thead { display: none; }
+  .sg-tabla tbody tr {
+    display: grid; grid-template-columns: 1fr auto; gap: 8px 12px;
+    padding: 16px 0; border-bottom: 1px solid var(--sg-suave);
+  }
+  .sg-tabla td { padding: 0; border: 0; }
+  .sg-tabla td:nth-child(1) { grid-column: 1; grid-row: 1; }
+  .sg-tabla td:nth-child(4) { grid-column: 1; grid-row: 2; text-align: left; padding-left: 56px; }
+  .sg-tabla td:nth-child(4) small { display: inline; margin-left: 6px; }
+  .sg-tabla td:nth-child(5) { grid-column: 2; grid-row: 2; }
+  .sg-tabla td.acciones { grid-column: 2; grid-row: 1; }
+  .ficha { width: 100vw; max-height: 92dvh; }
+  .avatar--grande { width: 44px; height: 44px; font-size: 15px; }
+}

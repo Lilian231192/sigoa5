@@ -1,0 +1,381 @@
+<section class="sg-pagina">
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="sg-cabecera">
+    <div>
+      <p class="sg-label"><span class="sg-punto"></span>{{ dosDigitos(delProyecto().length) }} pagos registrados</p>
+      <h1>Pagos</h1>
+      <p class="sg-cabecera__sub">Cobros recibidos y programados de cada proyecto, contra el monto de su contrato.</p>
+    </div>
+
+    <div class="sg-cabecera__acciones">
+      <label class="sg-buscador">
+        <app-icono nombre="buscar" />
+        <input class="sg-input" type="search" placeholder="Buscar concepto, proyecto o referencia"
+               [ngModel]="busqueda()" (ngModelChange)="buscar($event)" aria-label="Buscar pagos">
+      </label>
+      <button type="button" class="sg-btn" (click)="nuevoPago()" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="mas" /> Registrar pago
+      </button>
+    </div>
+  </header>
+
+  @if (desdeCopia() && !cargando()) {
+    <p class="sg-aviso-copia">
+      <app-icono nombre="wifi-off" />
+      Sin conexión · Mostrando datos guardados el {{ momentoCopia() }}. Registrar, editar y eliminar se habilitan al volver la conexión.
+    </p>
+  }
+
+  @if (error()) {
+    <div class="sg-alerta error">
+      {{ error() }}
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="recargar()">Reintentar</button>
+    </div>
+  }
+
+  @if (idProyectoFiltro()) {
+    <div class="sg-filtro-proyecto">
+      <span class="sg-label">Proyecto</span>
+      <strong>{{ codigoProyecto(idProyectoFiltro()) }} · {{ nombreProyectoFiltro() || 'Seleccionado' }}</strong>
+      <button type="button" class="sg-icono-btn" (click)="quitarFiltroProyecto()" aria-label="Ver todos los pagos">
+        <app-icono nombre="cerrar" />
+      </button>
+    </div>
+  }
+
+  <!-- ============ INDICADORES ============ -->
+  <div class="sg-indicadores" [class.cargando]="cargando()">
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="pagos" /><span class="sg-label">01 · Cobrado</span></div>
+      <strong class="sg-indicador__numero">{{ dinero(indicadores().cobrado) }}</strong>
+      <small>{{ dinero(indicadores().cobradoMes) }} cobrados este mes</small>
+    </div>
+
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="calendario" /><span class="sg-label">02 · Por cobrar</span></div>
+      <strong class="sg-indicador__numero">{{ dinero(indicadores().porCobrar) }}</strong>
+      <small>
+        {{ indicadores().pendientes }} pago(s) pendiente(s)
+        @if (indicadores().vencidos) {
+          · <b class="alerta-texto">{{ indicadores().vencidos }} vencido(s) por {{ dinero(indicadores().montoVencido) }}</b>
+        }
+      </small>
+    </div>
+
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="contratos" /><span class="sg-label">03 · Saldo de contratos</span></div>
+      <strong class="sg-indicador__numero">{{ dinero(indicadores().saldoContratos) }}</strong>
+      <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="indicadores().porcentajeContratos"></span></div>
+      <small>{{ indicadores().porcentajeContratos }}% cobrado de los contratos vigentes</small>
+    </div>
+  </div>
+
+  <!-- ============ FILTRO POR ESTADO ============ -->
+  <nav class="sg-tabs" aria-label="Filtrar por estado">
+    @for (estado of filtros; track estado) {
+      <button type="button" [class.activo]="filtroEstado() === estado" (click)="filtrar(estado)">
+        {{ estado }} <small>{{ conteos()[estado] ?? 0 }}</small>
+      </button>
+    }
+  </nav>
+
+  <!-- ============ LISTA ============ -->
+  <div class="lista" [class.cargando]="cargando()">
+    @if (paginaActual().length) {
+      <table class="sg-tabla">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Concepto</th>
+            <th class="col-ocultable">Proyecto</th>
+            <th class="col-ocultable">Método</th>
+            <th class="der">Monto</th>
+            <th>Estado</th>
+            <th><span class="sg-sr">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of paginaActual(); track p.id) {
+            <tr (click)="verPago(p)">
+              <td class="fecha" [class.alerta-texto]="vencido(p)">
+                {{ fecha(p.fecha) }}
+                @if (vencido(p)) { <small class="etiqueta">Vencido</small> }
+              </td>
+              <td>
+                <strong class="nombre">{{ p.concepto }}</strong>
+                <small class="sub">{{ folio(p) }}{{ p.referencia ? ' · ' + p.referencia : '' }}</small>
+                <small class="sub sub-movil">{{ p.proyecto }}</small>
+              </td>
+              <td class="col-ocultable">
+                <strong class="proyecto">{{ p.proyecto }}</strong>
+                <small class="sub">{{ p.cliente }}</small>
+              </td>
+              <td class="col-ocultable metodo">{{ p.metodo_pago }}</td>
+              <td class="der total">{{ moneda(p.monto) }}</td>
+              <td><span class="sg-chip" [class]="claseEstado(p.estado)">{{ p.estado }}</span></td>
+              <td class="acciones" (click)="$event.stopPropagation()">
+                <div class="sg-menu">
+                  <button type="button" class="sg-icono-btn" (click)="alternarMenu(p.id, $event)" aria-label="Más acciones">
+                    <app-icono nombre="opciones" />
+                  </button>
+                  @if (menuAbierto() === p.id) {
+                    <div class="sg-menu__velo" (click)="menuAbierto.set(null)"></div>
+                    <div class="sg-menu__lista">
+                      <button type="button" (click)="verPago(p)"><app-icono nombre="ver" /> Ver detalle</button>
+                      <button type="button" (click)="editarPago(p)" [disabled]="!conexion.enLinea()"><app-icono nombre="editar" /> Editar</button>
+                      @if (p.estado === 'Pendiente') {
+                        <button type="button" (click)="cambiarEstado(p, 'Pagado')" [disabled]="!conexion.enLinea()"><app-icono nombre="pagos" /> Marcar pagado</button>
+                      }
+                      @if (p.estado === 'Pagado') {
+                        <button type="button" (click)="descargarRecibo(p)"><app-icono nombre="descargar" /> Recibo PDF</button>
+                      }
+                      <hr>
+                      <button type="button" class="sg-menu__peligro" (click)="eliminarPago(p)" [disabled]="!conexion.enLinea()">
+                        <app-icono nombre="borrar" /> Eliminar
+                      </button>
+                    </div>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (totalPaginas() > 1) {
+        <div class="sg-paginacion">
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(-1)" [disabled]="pagina() === 1" aria-label="Página anterior">
+            <app-icono nombre="anterior" />
+          </button>
+          <span>{{ dosDigitos(pagina()) }} / {{ dosDigitos(totalPaginas()) }}</span>
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(1)" [disabled]="pagina() === totalPaginas()" aria-label="Página siguiente">
+            <app-icono nombre="siguiente" />
+          </button>
+        </div>
+      }
+    } @else if (!cargando()) {
+      <div class="sg-vacio">
+        <app-icono nombre="pagos" />
+        @if (busqueda() || filtroEstado() !== 'Todos') {
+          <p>No hay pagos que coincidan con la búsqueda o el filtro.</p>
+        } @else {
+          <p>Aún no hay pagos{{ idProyectoFiltro() ? ' para este proyecto' : '' }}.</p>
+          @if (conexion.enLinea()) {
+            <button type="button" class="enlace" (click)="nuevoPago()">Registrar el primer pago</button>
+          }
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- FICHA DEL PAGO (modal central)                                     -->
+<!-- ================================================================== -->
+@if (seleccionado(); as p) {
+  <div class="sg-velo" (click)="seleccionado.set(null)"></div>
+  <div class="sg-modal ficha" role="dialog" aria-modal="true" aria-label="Detalle del pago">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">Pagos / {{ folio(p) }}</span>
+        <div class="ficha__titulo">
+          <h2>{{ p.concepto }}</h2>
+          <span class="sg-chip" [class]="claseEstado(p.estado)">{{ p.estado }}</span>
+        </div>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="seleccionado.set(null)" aria-label="Cerrar detalle">
+        <app-icono nombre="cerrar" />
+      </button>
+    </header>
+
+    <div class="sg-modal__cuerpo ficha__cuerpo">
+
+      <!-- ===== Columna izquierda: el pago ===== -->
+      <section class="ficha__resumen">
+        <div class="ficha-total">
+          <span class="sg-label">Monto</span>
+          <strong>{{ moneda(p.monto) }}</strong>
+          @if (vencido(p)) { <small class="alerta-texto">Pendiente con fecha vencida</small> }
+        </div>
+
+        <dl class="ficha-datos">
+          <div><dt class="sg-label">Fecha</dt><dd>{{ fecha(p.fecha) }}</dd></div>
+          <div><dt class="sg-label">Método</dt><dd>{{ p.metodo_pago }}</dd></div>
+          <div><dt class="sg-label">Referencia</dt><dd>{{ p.referencia || '—' }}</dd></div>
+          <div><dt class="sg-label">Proyecto</dt><dd>{{ codigoProyecto(p.id_proyecto) }}</dd></div>
+          <div class="completo"><dt class="sg-label">Cliente</dt><dd>{{ p.proyecto }} · {{ p.cliente }}</dd></div>
+        </dl>
+
+        @if (accionesEstado(p).length) {
+          <div class="bloque">
+            <h3 class="bloque__titulo">Estado del pago</h3>
+            <div class="estado-rapido">
+              @for (a of accionesEstado(p); track a.estado) {
+                <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="cambiarEstado(p, a.estado)"
+                        [disabled]="!conexion.enLinea()">
+                  {{ a.texto }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        @if (p.observaciones) {
+          <div class="bloque">
+            <h3 class="bloque__titulo">Observaciones</h3>
+            <p class="observaciones">{{ p.observaciones }}</p>
+          </div>
+        }
+      </section>
+
+      <!-- ===== Columna derecha: contrato y calendario de pagos ===== -->
+      <section class="ficha__conceptos">
+        @if (contratoDe(p.id_proyecto); as contrato) {
+          <div class="cobro">
+            <div class="cobro__cifras">
+              <div><span class="sg-label">Contrato {{ contrato.numero_contrato }}</span><strong>{{ moneda(contrato.monto) }}</strong></div>
+              <div class="der"><span class="sg-label">Saldo</span><strong>{{ moneda(contrato.monto - cobradoProyecto(p.id_proyecto)) }}</strong></div>
+            </div>
+            <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="porcentajeCobrado(contrato)"></span></div>
+            <small class="ayuda">{{ porcentajeCobrado(contrato) }}% cobrado · {{ moneda(cobradoProyecto(p.id_proyecto)) }}</small>
+          </div>
+        } @else {
+          <p class="bloqueado-nota">Este proyecto aún no tiene un contrato activo; el pago no se compara contra un monto.</p>
+        }
+
+        <h3 class="bloque__titulo">Otros pagos del proyecto <small>{{ otrosPagos(p).length }}</small></h3>
+        @if (otrosPagos(p).length) {
+          <table class="tabla-conceptos">
+            <thead>
+              <tr><th>Fecha</th><th>Concepto</th><th>Estado</th><th class="der">Monto</th></tr>
+            </thead>
+            <tbody>
+              @for (o of otrosPagos(p); track o.id) {
+                <tr class="fila-clic" (click)="verPago(o)">
+                  <td class="fecha" [class.alerta-texto]="vencido(o)">{{ fecha(o.fecha) }}</td>
+                  <td><strong>{{ o.concepto }}</strong><small>{{ o.metodo_pago }}</small></td>
+                  <td><span class="sg-chip" [class]="claseEstado(o.estado)">{{ o.estado }}</span></td>
+                  <td class="der importe">{{ moneda(o.monto) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="sg-vacio">Es el único pago de este proyecto.</p>
+        }
+
+        <button type="button" class="ficha-enlace" (click)="irAContratos(p)">
+          <app-icono nombre="contratos" /> Ver contrato del proyecto <app-icono nombre="siguiente" />
+        </button>
+      </section>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico peligro-texto"
+              (click)="eliminarPago(p)" [disabled]="!conexion.enLinea()">Eliminar</button>
+      @if (p.estado === 'Pagado') {
+        <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="descargarRecibo(p)">
+          <app-icono nombre="descargar" /> Recibo
+        </button>
+      }
+      <button type="button" class="sg-btn sg-btn--chico" (click)="editarPago(p)" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="editar" /> Editar
+      </button>
+    </footer>
+  </div>
+}
+
+<!-- ================================================================== -->
+<!-- FORMULARIO DE PAGO (crear / editar)                                -->
+<!-- ================================================================== -->
+@if (formPago(); as form) {
+  <div class="sg-velo sg-velo--alto" (click)="formPago.set(null)"></div>
+  <form class="sg-modal sg-modal--alto" (ngSubmit)="guardarPago()">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">{{ form.id ? folioDe(form.id) : 'Nuevo registro' }}</span>
+        <h2>{{ form.id ? 'Editar pago' : 'Registrar pago' }}</h2>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="formPago.set(null)" aria-label="Cerrar"><app-icono nombre="cerrar" /></button>
+    </header>
+
+    <div class="sg-modal__cuerpo sg-form">
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="g-proyecto">Proyecto *</label>
+        <select id="g-proyecto" class="sg-select" name="id_proyecto" [(ngModel)]="form.id_proyecto" required>
+          <option [ngValue]="null" disabled>Selecciona un proyecto</option>
+          @for (pr of proyectos(); track pr.id) {
+            <option [ngValue]="pr.id">{{ codigoProyecto(pr.id) }} · {{ pr.nombre }}</option>
+          }
+        </select>
+        @if (form.id_proyecto) {
+          <small class="ayuda">
+            @if (contratoDe(form.id_proyecto); as contrato) {
+              Contrato <strong>{{ contrato.numero_contrato }}</strong> por {{ moneda(contrato.monto) }} ·
+              quedan <strong>{{ moneda(disponible(form) ?? 0) }}</strong> por programar
+            } @else {
+              Sin contrato activo: el pago no se compara contra un monto.
+            }
+          </small>
+        }
+      </div>
+
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="g-concepto">Concepto *</label>
+        <input id="g-concepto" class="sg-input" name="concepto" [(ngModel)]="form.concepto" required maxlength="150"
+               placeholder="Ej. Anticipo 30%, Segundo pago, Finiquito">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="g-monto">Monto (MXN) *</label>
+        <input id="g-monto" class="sg-input" type="number" min="0.01" step="0.01" name="monto" [(ngModel)]="form.monto" required>
+        @if (disponible(form); as saldo) {
+          <small class="ayuda"><button type="button" class="enlace enlace--chico" (click)="usarSaldo(form)">Usar saldo {{ moneda(saldo) }}</button></small>
+        }
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="g-fecha">{{ form.estado === 'Pagado' ? 'Fecha en que se pagó *' : 'Fecha programada *' }}</label>
+        <input id="g-fecha" class="sg-input" type="date" name="fecha" [(ngModel)]="form.fecha" required>
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="g-estado">Estado</label>
+        <select id="g-estado" class="sg-select" name="estado" [(ngModel)]="form.estado">
+          @for (e of estados; track e) {
+            <option [value]="e">{{ e }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="g-metodo">Método de pago *</label>
+        <select id="g-metodo" class="sg-select" name="metodo_pago" [(ngModel)]="form.metodo_pago">
+          @for (m of metodos; track m) {
+            <option [value]="m">{{ m }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="g-referencia">Referencia{{ referenciaObligatoria(form) ? ' *' : '' }}</label>
+        <input id="g-referencia" class="sg-input" name="referencia" [(ngModel)]="form.referencia" maxlength="100"
+               placeholder="Folio SPEI, número de autorización o recibo">
+      </div>
+
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="g-observaciones">Observaciones</label>
+        <textarea id="g-observaciones" class="sg-textarea" name="observaciones" [(ngModel)]="form.observaciones"
+                  placeholder="Ej. Se paga al terminar losas"></textarea>
+      </div>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="formPago.set(null)">Cancelar</button>
+      <button type="submit" class="sg-btn sg-btn--chico" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : (form.id ? 'Guardar cambios' : 'Registrar pago') }}
+      </button>
+    </footer>
+  </form>
+}

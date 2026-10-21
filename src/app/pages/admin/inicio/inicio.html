@@ -1,0 +1,183 @@
+<section class="inicio">
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <p class="sg-label"><span class="punto"></span>{{ fechaHoy }} · Administración</p>
+      <h1>{{ saludo }}, <span class="resaltado">{{ nombre() }}</span></h1>
+      <p class="cabecera__sub">Este es el estado general de tu despacho hoy.</p>
+    </div>
+
+    <!-- Cuadro de rótulo, como el de una lámina de planos -->
+    <dl class="rotulo">
+      <div><dt class="sg-label">Proyecto</dt><dd>SIGOA · Despacho</dd></div>
+      <div><dt class="sg-label">Obras activas</dt><dd>{{ dosDigitos(resumen().obras.enConstruccion) }}</dd></div>
+      <div><dt class="sg-label">Hoja</dt><dd>A-01</dd></div>
+    </dl>
+  </header>
+
+  @if (desdeCopia() && !cargando()) {
+    <p class="aviso">
+      <app-icono nombre="wifi-off" />
+      Sin conexión · Mostrando datos guardados el {{ momentoCopia() }}
+    </p>
+  }
+
+  @if (error()) {
+    <div class="sg-alerta error">
+      {{ error() }}
+      <button type="button" class="sg-btn sg-btn--contorno" (click)="recargar()">Reintentar</button>
+    </div>
+  }
+
+  <!-- ============ 01 · INDICADORES ============ -->
+  <h2 class="seccion"><span>01</span> Indicadores</h2>
+
+  <div class="indicadores" [class.cargando]="cargando()">
+    <a class="tarjeta" routerLink="/admin/proyectos">
+      <div class="tarjeta__cabeza">
+        <span class="tarjeta__icono"><app-icono nombre="proyectos" /></span>
+        <span class="sg-label">Proyectos activos</span>
+      </div>
+      <strong class="tarjeta__numero">{{ dosDigitos(resumen().proyectos.enProgreso) }}</strong>
+      <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="proporcion(resumen().proyectos.enProgreso, resumen().proyectos.total)"></span></div>
+      <small>{{ resumen().proyectos.enProgreso }} de {{ resumen().proyectos.total }} proyectos en progreso</small>
+    </a>
+
+    <a class="tarjeta" routerLink="/admin/obras">
+      <div class="tarjeta__cabeza">
+        <span class="tarjeta__icono"><app-icono nombre="obras" /></span>
+        <span class="sg-label">Obras en construcción</span>
+      </div>
+      <strong class="tarjeta__numero">{{ dosDigitos(resumen().obras.enConstruccion) }}</strong>
+      <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="proporcion(resumen().obras.enConstruccion, resumen().obras.total)"></span></div>
+      <small>{{ resumen().obras.enConstruccion }} de {{ resumen().obras.total }} obras registradas</small>
+    </a>
+
+    <a class="tarjeta" routerLink="/admin/cotizaciones">
+      <div class="tarjeta__cabeza">
+        <span class="tarjeta__icono"><app-icono nombre="cotizaciones" /></span>
+        <span class="sg-label">Cotizaciones pendientes</span>
+      </div>
+      <strong class="tarjeta__numero">{{ dosDigitos(resumen().cotizaciones.pendientes) }}</strong>
+      <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="proporcion(resumen().cotizaciones.pendientes, resumen().cotizaciones.total)"></span></div>
+      <small>{{ resumen().contratos.activos }} contratos activos</small>
+    </a>
+
+    <!-- Tarjeta de pagos (ya sin el fondo oscuro) -->
+    <a class="tarjeta" routerLink="/admin/pagos">
+      <div class="tarjeta__cabeza">
+        <span class="tarjeta__icono"><app-icono nombre="pagos" /></span>
+        <span class="sg-label">Pagos pendientes</span>
+      </div>
+      <strong class="tarjeta__numero">{{ dinero(resumen().pagos.montoPendiente) }}</strong>
+      <small>{{ resumen().pagos.pendientes }} pagos por cobrar</small>
+      <span class="tarjeta__ir">Ver pagos <app-icono nombre="flecha" /></span>
+    </a>
+  </div>
+
+  <!-- ============ 02 · AVANCE + 03 · FECHAS ============ -->
+  <div class="paneles" [class.cargando]="cargando()">
+
+    <section class="panel">
+      <h2 class="seccion"><span>02</span> Avance de obras</h2>
+
+      <div class="avance">
+        <!-- Medidor circular tipo transportador -->
+        <div class="medidor">
+          <svg viewBox="0 0 200 200" aria-hidden="true">
+            @for (grado of marcas; track grado) {
+              <line x1="100" y1="6" x2="100" [attr.y2]="grado % 45 === 0 ? 18 : 12"
+                    [attr.transform]="'rotate(' + grado + ' 100 100)'" />
+            }
+            <circle class="medidor__base" cx="100" cy="100" r="72" />
+            <circle class="medidor__arco" cx="100" cy="100" r="72" pathLength="100"
+                    [attr.stroke-dasharray]="resumen().avancePromedio + ' 100'" />
+          </svg>
+          <div class="medidor__valor">
+            <strong>{{ resumen().avancePromedio.toFixed(0) }}<small>%</small></strong>
+            <span class="sg-label">Promedio</span>
+          </div>
+        </div>
+
+        <div class="lista">
+          @for (obra of obrasEnCurso(); track obra.id) {
+            <div class="obra">
+              <div class="obra__datos">
+                <span class="sg-label">{{ codigo(obra.id) }} · {{ estadoTexto(obra.estado) }}</span>
+                <strong>{{ obra.nombre }}</strong>
+                <small>{{ obra.proyecto }}</small>
+              </div>
+              <span class="obra__porcentaje">{{ obra.porcentaje_avance }}%</span>
+              <div class="sg-cota obra__barra">
+                <span class="sg-cota__relleno" [style.width.%]="obra.porcentaje_avance"></span>
+              </div>
+            </div>
+          } @empty {
+            <div class="vacio">
+              <app-icono nombre="obras" />
+              <p>Aún no hay obras en curso.</p>
+              <a routerLink="/admin/obras">Registrar la primera obra</a>
+            </div>
+          }
+        </div>
+      </div>
+
+      <a class="enlace" routerLink="/admin/obras">Ver todas las obras <app-icono nombre="flecha" /></a>
+    </section>
+
+    <section class="panel">
+      <h2 class="seccion"><span>03</span> Próximas fechas</h2>
+
+      <ol class="linea-tiempo">
+        @for (f of proximasFechas(); track f.codigo + f.evento) {
+          <li class="evento">
+            <div class="evento__fecha">
+              <strong>{{ dia(f.fecha) }}</strong>
+              <span>{{ mes(f.fecha) }}</span>
+            </div>
+            <div class="evento__datos">
+              <span class="sg-label">{{ faltan(f.fecha) }}</span>
+              <strong>{{ f.evento }}</strong>
+              <small>{{ f.codigo }} · {{ f.obra }}</small>
+            </div>
+          </li>
+        } @empty {
+          <li class="vacio">
+            <app-icono nombre="calendario" />
+            <p>Sin fechas próximas registradas.</p>
+          </li>
+        }
+      </ol>
+    </section>
+  </div>
+
+  <!-- ============ 04 · ACCESOS RÁPIDOS (solo con conexión) ============ -->
+  <h2 class="seccion"><span>04</span> Accesos rápidos</h2>
+
+  <div class="accesos" [class.bloqueado]="!conexion.enLinea()">
+    <a class="acceso" routerLink="/admin/proyectos">
+      <app-icono nombre="proyectos" />
+      <div><strong>Nuevo proyecto</strong><small>Registrar un proyecto y su cliente</small></div>
+      <app-icono nombre="mas" />
+    </a>
+    <a class="acceso" routerLink="/admin/obras">
+      <app-icono nombre="obras" />
+      <div><strong>Nueva obra</strong><small>Vincular una obra a un proyecto</small></div>
+      <app-icono nombre="mas" />
+    </a>
+    <a class="acceso" routerLink="/admin/cotizaciones">
+      <app-icono nombre="cotizaciones" />
+      <div><strong>Nueva cotización</strong><small>Preparar un presupuesto</small></div>
+      <app-icono nombre="mas" />
+    </a>
+    <a class="acceso" routerLink="/admin/pagos">
+      <app-icono nombre="pagos" />
+      <div><strong>Registrar pago</strong><small>Anotar un cobro recibido</small></div>
+      <app-icono nombre="mas" />
+    </a>
+  </div>
+  @if (!conexion.enLinea()) {
+    <p class="nota">Los registros nuevos se habilitan al volver la conexión.</p>
+  }
+</section>

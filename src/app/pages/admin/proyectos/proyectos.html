@@ -1,0 +1,370 @@
+<section class="sg-pagina">
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="sg-cabecera">
+    <div>
+      <p class="sg-label"><span class="sg-punto"></span>{{ dosDigitos(proyectos().length) }} proyectos registrados</p>
+      <h1>Proyectos</h1>
+      <p class="sg-cabecera__sub">Clientes, arquitectos, obras y avance de cada proyecto del despacho.</p>
+    </div>
+
+    <div class="sg-cabecera__acciones">
+      <label class="sg-buscador">
+        <app-icono nombre="buscar" />
+        <input class="sg-input" type="search" placeholder="Buscar proyecto, cliente o código"
+               [ngModel]="busqueda()" (ngModelChange)="buscar($event)" aria-label="Buscar proyectos">
+      </label>
+      <button type="button" class="sg-btn" (click)="nuevoProyecto()" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="mas" /> Nuevo proyecto
+      </button>
+    </div>
+  </header>
+
+  @if (desdeCopia() && !cargando()) {
+    <p class="sg-aviso-copia">
+      <app-icono nombre="wifi-off" />
+      Sin conexión · Mostrando datos guardados el {{ momentoCopia() }}. Crear, editar y eliminar se habilitan al volver la conexión.
+    </p>
+  }
+
+  @if (error()) {
+    <div class="sg-alerta error">
+      {{ error() }}
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="recargar()">Reintentar</button>
+    </div>
+  }
+
+  <!-- ============ FILTRO POR ESTADO ============ -->
+  <nav class="sg-tabs" aria-label="Filtrar por estado">
+    @for (estado of filtros; track estado) {
+      <button type="button" [class.activo]="filtroEstado() === estado" (click)="filtrar(estado)">
+        {{ estado }} <small>{{ conteos()[estado] ?? 0 }}</small>
+      </button>
+    }
+  </nav>
+
+  <!-- ============ LISTA (tabla en computadora, tarjetas en celular) ============ -->
+  <div class="lista" [class.cargando]="cargando()">
+    @if (paginaActual().length) {
+      <table class="sg-tabla">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Proyecto</th>
+            <th class="col-ocultable">Cliente</th>
+            <th class="col-ocultable">Arquitecto</th>
+            <th class="centro">Obras</th>
+            <th>Avance</th>
+            <th>Estado</th>
+            <th class="col-ocultable">Entrega</th>
+            <th><span class="sg-sr">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of paginaActual(); track p.id) {
+            <tr (click)="verProyecto(p)">
+              <td class="sg-codigo">{{ codigo(p.id) }}</td>
+              <td>
+                <strong class="nombre">{{ p.nombre }}</strong>
+                <small class="sub-movil">{{ p.cliente }}</small>
+              </td>
+              <td class="col-ocultable">{{ p.cliente }}</td>
+              <td class="col-ocultable" [class.gris]="!p.arquitecto">{{ p.arquitecto || 'Sin asignar' }}</td>
+              <td class="centro">{{ p.obras.length }}</td>
+              <td>
+                <div class="avance">
+                  <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="avance(p)"></span></div>
+                  <span class="avance__numero">{{ avance(p) }}%</span>
+                </div>
+              </td>
+              <td><span class="sg-chip" [class]="claseEstado(p.estado)">{{ p.estado }}</span></td>
+              <td class="col-ocultable fecha">{{ fecha(p.fecha_fin) }}</td>
+              <td class="acciones" (click)="$event.stopPropagation()">
+                <div class="sg-menu">
+                  <button type="button" class="sg-icono-btn" (click)="alternarMenu(p.id, $event)" aria-label="Más acciones">
+                    <app-icono nombre="opciones" />
+                  </button>
+                  @if (menuAbierto() === p.id) {
+                    <div class="sg-menu__velo" (click)="menuAbierto.set(null)"></div>
+                    <div class="sg-menu__lista">
+                      <button type="button" (click)="verProyecto(p)"><app-icono nombre="ver" /> Ver ficha</button>
+                      <button type="button" (click)="editarProyecto(p)" [disabled]="!conexion.enLinea()"><app-icono nombre="editar" /> Editar</button>
+                      <hr>
+                      <button type="button" (click)="irA('cotizaciones', p)"><app-icono nombre="cotizaciones" /> Cotizaciones</button>
+                      <button type="button" (click)="irA('contratos', p)"><app-icono nombre="contratos" /> Contratos</button>
+                      <button type="button" (click)="irA('pagos', p)"><app-icono nombre="pagos" /> Pagos</button>
+                      <hr>
+                      <button type="button" class="sg-menu__peligro" (click)="eliminarProyecto(p)" [disabled]="!conexion.enLinea()">
+                        <app-icono nombre="borrar" /> Eliminar
+                      </button>
+                    </div>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (totalPaginas() > 1) {
+        <div class="sg-paginacion">
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(-1)" [disabled]="pagina() === 1" aria-label="Página anterior">
+            <app-icono nombre="anterior" />
+          </button>
+          <span>{{ dosDigitos(pagina()) }} / {{ dosDigitos(totalPaginas()) }}</span>
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(1)" [disabled]="pagina() === totalPaginas()" aria-label="Página siguiente">
+            <app-icono nombre="siguiente" />
+          </button>
+        </div>
+      }
+    } @else if (!cargando()) {
+      <div class="sg-vacio">
+        <app-icono nombre="proyectos" />
+        @if (busqueda() || filtroEstado() !== 'Todos') {
+          <p>No hay proyectos que coincidan con la búsqueda o el filtro.</p>
+        } @else {
+          <p>Aún no hay proyectos registrados.</p>
+          @if (conexion.enLinea()) {
+            <button type="button" class="enlace" (click)="nuevoProyecto()">Registrar el primer proyecto</button>
+          }
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- FICHA LATERAL DEL PROYECTO                                          -->
+<!-- ================================================================== -->
+@if (seleccionado(); as p) {
+  <div class="sg-velo" (click)="seleccionado.set(null)"></div>
+  <aside class="sg-lateral" aria-label="Ficha del proyecto">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">Proyectos / {{ codigo(p.id) }}</span>
+        <h2>{{ p.nombre }}</h2>
+        <span class="sg-chip" [class]="claseEstado(p.estado)">{{ p.estado }}</span>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="seleccionado.set(null)" aria-label="Cerrar ficha">
+        <app-icono nombre="cerrar" />
+      </button>
+    </header>
+
+    <div class="sg-modal__cuerpo">
+      <!-- Avance general -->
+      <div class="ficha-avance">
+        <strong>{{ avance(p) }}%</strong>
+        <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="avance(p)"></span></div>
+        <span class="sg-label">Avance general</span>
+      </div>
+
+      <dl class="ficha-datos">
+        <div><dt class="sg-label">Cliente</dt><dd>{{ p.cliente || '—' }}</dd></div>
+        <div><dt class="sg-label">Arquitecto</dt><dd>{{ p.arquitecto || 'Sin asignar' }}</dd></div>
+        <div><dt class="sg-label">Inicio</dt><dd>{{ fecha(p.fecha_inicio) }}</dd></div>
+        <div><dt class="sg-label">Entrega</dt><dd>{{ fecha(p.fecha_fin) }}</dd></div>
+        <div class="completo"><dt class="sg-label">Ubicación</dt><dd>{{ p.ubicacion || '—' }}</dd></div>
+        @if (p.descripcion) {
+          <div class="completo"><dt class="sg-label">Descripción</dt><dd>{{ p.descripcion }}</dd></div>
+        }
+      </dl>
+
+      <!-- Obras del proyecto -->
+      <div class="ficha-titulo">
+        <h3>Obras del proyecto</h3>
+        <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="nuevaObra(p)" [disabled]="!conexion.enLinea()">
+          <app-icono nombre="mas" /> Agregar obra
+        </button>
+      </div>
+
+      @for (o of p.obras; track o.id_obra) {
+        <div class="ficha-obra">
+          <div class="ficha-obra__datos">
+            <span class="sg-label">{{ codigoObra(o.id_obra) }} · {{ estadoTexto(o.estado) }}</span>
+            <strong>{{ o.nombre }}</strong>
+            <div class="avance">
+              <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="o.porcentaje_avance"></span></div>
+              <span class="avance__numero">{{ o.porcentaje_avance }}%</span>
+            </div>
+          </div>
+          <div class="ficha-obra__acciones">
+            <button type="button" class="sg-icono-btn" (click)="editarObra(o)" [disabled]="!conexion.enLinea()" aria-label="Editar obra">
+              <app-icono nombre="editar" />
+            </button>
+            <button type="button" class="sg-icono-btn" (click)="eliminarObra(o)" [disabled]="!conexion.enLinea()" aria-label="Eliminar obra">
+              <app-icono nombre="borrar" />
+            </button>
+          </div>
+        </div>
+      } @empty {
+        <p class="sg-vacio">Este proyecto aún no tiene obras.</p>
+      }
+
+      <!-- Accesos a los registros del proyecto -->
+      <div class="ficha-titulo"><h3>Registros del proyecto</h3></div>
+      <div class="ficha-enlaces">
+        <button type="button" (click)="irA('cotizaciones', p)"><app-icono nombre="cotizaciones" /> Cotizaciones <app-icono nombre="siguiente" /></button>
+        <button type="button" (click)="irA('contratos', p)"><app-icono nombre="contratos" /> Contratos <app-icono nombre="siguiente" /></button>
+        <button type="button" (click)="irA('pagos', p)"><app-icono nombre="pagos" /> Pagos <app-icono nombre="siguiente" /></button>
+      </div>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico peligro-texto"
+              (click)="eliminarProyecto(p)" [disabled]="!conexion.enLinea()">Eliminar</button>
+      <button type="button" class="sg-btn sg-btn--chico" (click)="editarProyecto(p)" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="editar" /> Editar proyecto
+      </button>
+    </footer>
+  </aside>
+}
+
+<!-- ================================================================== -->
+<!-- FORMULARIO DE PROYECTO (crear / editar)                            -->
+<!-- ================================================================== -->
+@if (formProyecto(); as form) {
+  <div class="sg-velo sg-velo--alto" (click)="formProyecto.set(null)"></div>
+  <form class="sg-modal sg-modal--alto" (ngSubmit)="guardarProyecto()">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">{{ form.id ? codigo(form.id) : 'Nuevo registro' }}</span>
+        <h2>{{ form.id ? 'Editar proyecto' : 'Nuevo proyecto' }}</h2>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="formProyecto.set(null)" aria-label="Cerrar"><app-icono nombre="cerrar" /></button>
+    </header>
+
+    <div class="sg-modal__cuerpo sg-form">
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="p-nombre">Nombre del proyecto *</label>
+        <input id="p-nombre" class="sg-input" name="nombre" [(ngModel)]="form.nombre" required maxlength="150" placeholder="Ej. Casa Pérez">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="p-cliente">Cliente *</label>
+        <select id="p-cliente" class="sg-select" name="id_cliente" [(ngModel)]="form.id_cliente" required>
+          <option [ngValue]="null" disabled>Selecciona un cliente</option>
+          @for (c of clientes(); track c.id) {
+            <option [ngValue]="c.id">{{ c.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="p-arquitecto">Arquitecto responsable{{ pideDatosCompletos(form) ? ' *' : '' }}</label>
+        <select id="p-arquitecto" class="sg-select" name="id_arquitecto" [(ngModel)]="form.id_arquitecto">
+          <option [ngValue]="null">Sin asignar</option>
+          @for (a of arquitectos(); track a.id) {
+            <option [ngValue]="a.id">{{ a.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="p-estado">Estado</label>
+        <select id="p-estado" class="sg-select" name="estado" [(ngModel)]="form.estado">
+          @for (e of estadosProyecto; track e) {
+            <option [value]="e" [disabled]="!!motivoEstado(form, e)">
+              {{ e }}{{ motivoEstado(form, e) ? ' (' + motivoEstado(form, e) + ')' : '' }}
+            </option>
+          }
+        </select>
+        <small class="ayuda">Para "Completado", todas sus obras deben estar finalizadas.</small>
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="p-ubicacion">Ubicación</label>
+        <input id="p-ubicacion" class="sg-input" name="ubicacion" [(ngModel)]="form.ubicacion" placeholder="Calle, colonia, municipio">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="p-inicio">Fecha de inicio{{ pideDatosCompletos(form) ? ' *' : '' }}</label>
+        <input id="p-inicio" class="sg-input" type="date" name="fecha_inicio" [(ngModel)]="form.fecha_inicio">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="p-fin">Fecha de entrega estimada{{ pideDatosCompletos(form) ? ' *' : '' }}</label>
+        <input id="p-fin" class="sg-input" type="date" name="fecha_fin" [(ngModel)]="form.fecha_fin">
+      </div>
+
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="p-descripcion">Descripción</label>
+        <textarea id="p-descripcion" class="sg-textarea" name="descripcion" [(ngModel)]="form.descripcion"
+                  placeholder="Alcance, tipo de proyecto, notas importantes"></textarea>
+      </div>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="formProyecto.set(null)">Cancelar</button>
+      <button type="submit" class="sg-btn sg-btn--chico" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : (form.id ? 'Guardar cambios' : 'Crear proyecto') }}
+      </button>
+    </footer>
+  </form>
+}
+
+<!-- ================================================================== -->
+<!-- FORMULARIO DE OBRA (crear / editar)                                -->
+<!-- ================================================================== -->
+@if (formObra(); as obra) {
+  <div class="sg-velo sg-velo--alto" (click)="formObra.set(null)"></div>
+  <form class="sg-modal sg-modal--alto" (ngSubmit)="guardarObra()">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">{{ codigo(obra.id_proyecto) }} · {{ obra.id ? codigoObra(obra.id) : 'Nueva obra' }}</span>
+        <h2>{{ obra.id ? 'Editar obra' : 'Agregar obra' }}</h2>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="formObra.set(null)" aria-label="Cerrar"><app-icono nombre="cerrar" /></button>
+    </header>
+
+    <div class="sg-modal__cuerpo sg-form">
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="o-nombre">Nombre de la obra *</label>
+        <input id="o-nombre" class="sg-input" name="nombre" [(ngModel)]="obra.nombre" required placeholder="Ej. Casa principal, Barda perimetral">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="o-estado">Estado</label>
+        <select id="o-estado" class="sg-select" name="estado" [ngModel]="obra.estado" (ngModelChange)="cambiarEstadoObra(obra, $event)">
+          @for (e of estadosObra; track e) {
+            <option [value]="e">{{ estadoTexto(e) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="o-avance">Avance: {{ obra.porcentaje_avance }}%</label>
+        <input id="o-avance" class="rango" type="range" min="0" max="100" step="5" name="porcentaje_avance"
+               [(ngModel)]="obra.porcentaje_avance" [disabled]="obra.estado === 'Pendiente' || obra.estado === 'Finalizada'">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="o-inicio">Fecha de inicio{{ obra.estado === 'Pendiente' || obra.estado === 'Cancelada' ? '' : ' *' }}</label>
+        <input id="o-inicio" class="sg-input" type="date" name="fecha_inicio" [(ngModel)]="obra.fecha_inicio">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="o-fin">Entrega estimada</label>
+        <input id="o-fin" class="sg-input" type="date" name="fecha_fin_estimada" [(ngModel)]="obra.fecha_fin_estimada">
+      </div>
+
+      @if (obra.estado === 'Finalizada') {
+        <div class="sg-campo">
+          <label class="sg-label" for="o-real">Fecha real de término *</label>
+          <input id="o-real" class="sg-input" type="date" name="fecha_fin_real" [(ngModel)]="obra.fecha_fin_real">
+        </div>
+      }
+
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="o-descripcion">Descripción</label>
+        <textarea id="o-descripcion" class="sg-textarea" name="descripcion" [(ngModel)]="obra.descripcion"></textarea>
+      </div>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="formObra.set(null)">Cancelar</button>
+      <button type="submit" class="sg-btn sg-btn--chico" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : (obra.id ? 'Guardar cambios' : 'Agregar obra') }}
+      </button>
+    </footer>
+  </form>
+}

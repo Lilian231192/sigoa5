@@ -1,0 +1,152 @@
+/* ===== Cotizaciones · Administrador ===== */
+
+.error { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.cargando { opacity: 0.45; pointer-events: none; }
+.der { text-align: right; }
+.alerta-texto { color: var(--sg-rojo); }
+
+/* ---------- Tabla ---------- */
+.nombre { display: block; font-size: 16px; font-weight: 700; }
+.sub { display: block; margin-top: 2px; font-size: 13px; color: var(--sg-gris); }
+.fecha { font-size: 13px; font-weight: 600; color: var(--sg-gris); white-space: nowrap; }
+.fecha.alerta-texto { color: var(--sg-rojo); }
+.etiqueta { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.total { font-weight: 800; white-space: nowrap; }
+.acciones { width: 44px; text-align: right; }
+
+.enlace {
+  padding: 0; border: 0; background: none; cursor: pointer;
+  font: 700 15px var(--sg-sans); color: var(--sg-negro); text-decoration: underline; text-underline-offset: 4px;
+}
+
+/* ---------- Ficha (modal central) ---------- */
+.ficha { width: min(1080px, calc(100vw - 32px)); max-height: calc(100dvh - 64px); }
+
+.ficha__titulo { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
+
+.ficha__cuerpo {
+  display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 36px; align-items: start;
+}
+
+/* Columna izquierda */
+.ficha__resumen { display: flex; flex-direction: column; gap: 20px; }
+
+.ficha-total { display: flex; flex-direction: column; gap: 4px; }
+.ficha-total strong { font-size: 36px; font-weight: 800; letter-spacing: -0.04em; line-height: 1.05; }
+
+.ficha-datos {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin: 0; padding: 16px 0;
+  border-top: 1px solid var(--sg-fuerte); border-bottom: 1px solid var(--sg-fuerte);
+}
+.ficha-datos dd { margin: 4px 0 0; font-weight: 600; }
+
+.bloque { display: flex; flex-direction: column; gap: 10px; }
+.bloque__titulo { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.bloque__titulo small {
+  margin-left: 6px; padding: 2px 8px; border-radius: 12px;
+  background: var(--sg-suave); color: var(--sg-gris); font-size: 12px;
+}
+
+.estado-rapido { display: flex; flex-wrap: wrap; gap: 10px; }
+.ayuda { display: block; font-size: 12px; color: var(--sg-gris); }
+.observaciones { margin: 0; white-space: pre-wrap; color: var(--sg-gris); font-size: 14px; }
+
+.ficha-enlace {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 4px;
+  border: 0; border-top: 1px solid var(--sg-suave); border-bottom: 1px solid var(--sg-suave);
+  background: none; cursor: pointer; font: 600 15px var(--sg-sans); color: var(--sg-negro); text-align: left;
+}
+.ficha-enlace app-icono:last-child { margin-left: auto; color: var(--sg-gris); }
+.ficha-enlace:hover { background: rgba(250, 200, 43, 0.12); }
+
+/* Columna derecha: tabla de conceptos */
+.ficha__conceptos { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+.tabla-conceptos { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabla-conceptos th {
+  padding: 0 8px 8px; border-bottom: 1px solid var(--sg-fuerte); text-align: left;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sg-gris);
+}
+.tabla-conceptos td { padding: 10px 8px; border-bottom: 1px solid var(--sg-suave); vertical-align: top; }
+.tabla-conceptos td strong { display: block; }
+.tabla-conceptos td small { display: block; margin-top: 2px; font-size: 13px; color: var(--sg-gris); }
+.tabla-conceptos .der { text-align: right; white-space: nowrap; }
+.tabla-conceptos .num { width: 28px; padding-left: 0; font-size: 12px; font-weight: 700; color: var(--sg-gris); }
+.tabla-conceptos .importe { font-weight: 700; }
+
+.montos { display: flex; flex-direction: column; gap: 6px; width: min(300px, 100%); margin: 8px 0 0 auto; }
+.montos div { display: flex; justify-content: space-between; gap: 16px; font-size: 14px; }
+.montos__total { margin-top: 4px; padding-top: 10px; border-top: 2px solid var(--sg-negro); font-size: 18px !important; font-weight: 800; }
+
+.peligro-texto { margin-right: auto; color: var(--sg-rojo); border-color: rgba(198, 40, 40, 0.3); }
+.peligro-texto:hover:not(:disabled) { background: var(--sg-rojo); color: var(--sg-blanco); }
+
+/* ---------- Formulario ---------- */
+.form-ancho { width: min(980px, calc(100vw - 32px)); }
+
+.ficha-titulo { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 26px 0 10px; }
+.ficha-titulo h3 { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.ficha-titulo small {
+  margin-left: 6px; padding: 2px 8px; border-radius: 12px;
+  background: var(--sg-suave); color: var(--sg-gris); font-size: 12px;
+}
+
+.bloqueado-nota {
+  margin: 0 0 12px; padding: 12px 14px; border: 1px solid var(--sg-fuerte); border-radius: 4px;
+  font-size: 13px; background: rgba(250, 200, 43, 0.12);
+}
+
+.conceptos__cabeza, .conceptos__fila {
+  display: grid; grid-template-columns: minmax(0, 1fr) 90px 90px 120px 120px 40px; gap: 12px; align-items: start;
+}
+.conceptos__cabeza {
+  padding-bottom: 8px; border-bottom: 1px solid var(--sg-fuerte);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sg-gris);
+}
+.conceptos__fila { padding: 12px 0; border-bottom: 1px solid var(--sg-suave); }
+.conceptos__concepto { display: flex; flex-direction: column; gap: 6px; }
+.sg-input--sub { font-size: 13px; }
+.conceptos__importe { padding-top: 10px; font-weight: 700; text-align: right; white-space: nowrap; }
+.conceptos--bloqueado .sg-input { opacity: 0.7; }
+
+.totales { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-top: 8px; }
+.iva { width: 110px; }
+.observaciones-campo { margin-top: 24px; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1180px) {
+  .col-ocultable { display: none; }
+}
+
+@media (max-width: 900px) {
+  .ficha__cuerpo { grid-template-columns: 1fr; gap: 28px; }
+}
+
+@media (max-width: 760px) {
+  .conceptos__cabeza { display: none; }
+  .conceptos__fila { grid-template-columns: 1fr 1fr 40px; }
+  .conceptos__concepto { grid-column: 1 / -1; }
+  .conceptos__importe { grid-column: 1 / 3; text-align: left; padding-top: 0; }
+  .totales { flex-direction: column; align-items: stretch; }
+}
+
+/* En celular cada fila de la tabla se vuelve una tarjeta */
+@media (max-width: 640px) {
+  .sg-tabla thead { display: none; }
+  .sg-tabla tbody tr {
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 12px;
+    padding: 16px 0; border-bottom: 1px solid var(--sg-suave);
+  }
+  .sg-tabla td { padding: 0; border: 0; }
+  .sg-tabla td:nth-child(1) { grid-column: 1; grid-row: 1; }
+  .sg-tabla td:nth-child(2) { grid-column: 1; grid-row: 2; }
+  .sg-tabla td:nth-child(5) { grid-column: 1; grid-row: 3; text-align: left; }
+  .sg-tabla td:nth-child(6) { grid-column: 2; grid-row: 3; }
+  .sg-tabla td.acciones { grid-column: 2; grid-row: 1 / 3; }
+  .ficha { width: 100vw; max-height: 92dvh; }
+  .ficha-total strong { font-size: 30px; }
+  .tabla-conceptos thead { display: none; }
+  .tabla-conceptos tr { display: grid; grid-template-columns: 28px 1fr auto; padding: 10px 0; border-bottom: 1px solid var(--sg-suave); }
+  .tabla-conceptos td { padding: 0; border: 0; }
+  .tabla-conceptos td:nth-child(3), .tabla-conceptos td:nth-child(4) { display: none; }
+}

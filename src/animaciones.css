@@ -1,0 +1,222 @@
+/* =========================================================
+   SIGOA · Animaciones de entrada
+   ---------------------------------------------------------
+   Un solo archivo para que cada pantalla entre suave y no
+   "de golpe". No hay que tocar ninguna pantalla: se aplica
+   solo con las clases que ya usan (sg-pagina, sg-cabecera,
+   sg-indicadores, sg-tabs, sg-tabla, sg-modal, etc.).
+
+   Reglas:
+   - Movimientos cortos (12-16 px) y rápidos (0.3-0.5 s).
+   - Entran en cascada: encabezado → indicadores → pestañas → lista.
+   - fill-mode "backwards": al terminar la animación el elemento
+     regresa a sus estilos normales (así .cargando sigue funcionando).
+   - Si el usuario pidió "reducir movimiento" en su sistema,
+     todo se desactiva (al final del archivo).
+   ========================================================= */
+
+:root {
+  --sg-anim-curva: cubic-bezier(0.22, 0.7, 0.2, 1);   /* sale rápido y frena suave */
+  --sg-anim-duracion: 0.5s;
+  --sg-anim-paso: 60ms;                                /* separación entre elementos */
+}
+
+/* ---------- Movimientos ---------- */
+@keyframes sg-anim-subir {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes sg-anim-desvanecer {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes sg-anim-llenar {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes sg-anim-modal {
+  from { opacity: 0; transform: translate(-50%, -47%) scale(0.98); }
+  to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes sg-anim-hoja {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes sg-anim-lateral {
+  from { opacity: 0.4; transform: translateX(40px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes sg-anim-aviso {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* =========================================================
+   1. ENTRADA DE CUALQUIER PANTALLA
+   Todo lo que cuelga del <main class="contenido"> del Shell
+   (menos modales, velos y visor, que tienen su propia animación).
+   Sirve también para las pantallas que aún no usan sg-pagina.
+   ========================================================= */
+.contenido > :not(router-outlet) > :not(.sg-pagina):not(.inicio):not(.sg-velo):not(.sg-modal):not(.sg-lateral):not(.visor) {
+  animation: sg-anim-subir var(--sg-anim-duracion) var(--sg-anim-curva) backwards;
+}
+
+/* En las pantallas con el diseño nuevo (y en Inicio), el contenedor solo
+   se desvanece y sus partes suben en cascada (abajo) */
+.sg-pagina,
+.inicio {
+  animation: sg-anim-desvanecer 0.35s ease backwards;
+}
+
+/* =========================================================
+   2. CASCADA DENTRO DE CADA PANTALLA (sg-pagina)
+   ========================================================= */
+.sg-pagina > .sg-cabecera,
+.sg-pagina > .sg-aviso-copia,
+.sg-pagina > .sg-alerta,
+.sg-pagina > .sg-filtro-proyecto,
+.sg-pagina > .filtro-proyecto,
+.sg-pagina > .sg-tabs,
+.sg-pagina > .filtros,
+.sg-pagina > .lista {
+  animation: sg-anim-subir var(--sg-anim-duracion) var(--sg-anim-curva) backwards;
+}
+
+.sg-pagina > .sg-cabecera        { animation-delay: 0ms; }
+.sg-pagina > .sg-aviso-copia,
+.sg-pagina > .sg-alerta,
+.sg-pagina > .sg-filtro-proyecto,
+.sg-pagina > .filtro-proyecto    { animation-delay: calc(var(--sg-anim-paso) * 1); }
+.sg-pagina > .sg-tabs,
+.sg-pagina > .filtros            { animation-delay: calc(var(--sg-anim-paso) * 5); }
+.sg-pagina > .lista              { animation-delay: calc(var(--sg-anim-paso) * 6); }
+
+/* Título y subtítulo del encabezado, un poquito separados */
+.sg-cabecera h1      { animation: sg-anim-subir var(--sg-anim-duracion) var(--sg-anim-curva) 40ms backwards; }
+.sg-cabecera__sub    { animation: sg-anim-desvanecer 0.6s ease 120ms backwards; }
+
+/* Tarjetas de indicadores: una tras otra */
+.sg-indicadores > * {
+  animation: sg-anim-subir var(--sg-anim-duracion) var(--sg-anim-curva) backwards;
+}
+.sg-indicadores > :nth-child(1) { animation-delay: calc(var(--sg-anim-paso) * 2); }
+.sg-indicadores > :nth-child(2) { animation-delay: calc(var(--sg-anim-paso) * 3); }
+.sg-indicadores > :nth-child(3) { animation-delay: calc(var(--sg-anim-paso) * 4); }
+.sg-indicadores > :nth-child(4) { animation-delay: calc(var(--sg-anim-paso) * 5); }
+
+/* Filas de las tablas: entran escalonadas (también al cambiar de filtro o de página,
+   porque Angular inserta filas nuevas) */
+.sg-tabla tbody tr {
+  animation: sg-anim-subir 0.45s var(--sg-anim-curva) backwards;
+}
+.sg-tabla tbody tr:nth-child(1)  { animation-delay: 380ms; }
+.sg-tabla tbody tr:nth-child(2)  { animation-delay: 420ms; }
+.sg-tabla tbody tr:nth-child(3)  { animation-delay: 460ms; }
+.sg-tabla tbody tr:nth-child(4)  { animation-delay: 500ms; }
+.sg-tabla tbody tr:nth-child(5)  { animation-delay: 540ms; }
+.sg-tabla tbody tr:nth-child(6)  { animation-delay: 580ms; }
+.sg-tabla tbody tr:nth-child(7)  { animation-delay: 620ms; }
+.sg-tabla tbody tr:nth-child(n+8) { animation-delay: 660ms; }
+
+/* Mensaje de "vacío" */
+.sg-vacio { animation: sg-anim-desvanecer 0.5s ease 300ms backwards; }
+
+/* Barras de avance: se llenan de izquierda a derecha */
+.sg-cota__relleno {
+  transform-origin: left center;
+  animation: sg-anim-llenar 0.9s var(--sg-anim-curva) 450ms backwards;
+}
+
+/* =========================================================
+   3. PANTALLA DE INICIO (usa sus propias clases)
+   ========================================================= */
+.inicio > * {
+  animation: sg-anim-subir var(--sg-anim-duracion) var(--sg-anim-curva) backwards;
+}
+.inicio > :nth-child(1) { animation-delay: 0ms; }
+.inicio > :nth-child(2) { animation-delay: calc(var(--sg-anim-paso) * 1); }
+.inicio > :nth-child(3) { animation-delay: calc(var(--sg-anim-paso) * 2); }
+.inicio > :nth-child(4) { animation-delay: calc(var(--sg-anim-paso) * 3); }
+.inicio > :nth-child(5) { animation-delay: calc(var(--sg-anim-paso) * 4); }
+.inicio > :nth-child(6) { animation-delay: calc(var(--sg-anim-paso) * 5); }
+.inicio > :nth-child(7) { animation-delay: calc(var(--sg-anim-paso) * 6); }
+.inicio > :nth-child(n+8) { animation-delay: calc(var(--sg-anim-paso) * 7); }
+
+/* Los contenedores de tarjetas no se mueven: se mueven sus tarjetas */
+.inicio > .indicadores,
+.inicio > .paneles,
+.inicio > .accesos {
+  animation: none;
+}
+
+.inicio .indicadores > *,
+.inicio .paneles > *,
+.inicio .accesos > * {
+  animation: sg-anim-subir var(--sg-anim-duracion) var(--sg-anim-curva) backwards;
+}
+.inicio .indicadores > :nth-child(1), .inicio .accesos > :nth-child(1) { animation-delay: 120ms; }
+.inicio .indicadores > :nth-child(2), .inicio .accesos > :nth-child(2) { animation-delay: 180ms; }
+.inicio .indicadores > :nth-child(3), .inicio .accesos > :nth-child(3) { animation-delay: 240ms; }
+.inicio .indicadores > :nth-child(4), .inicio .accesos > :nth-child(4) { animation-delay: 300ms; }
+.inicio .paneles > :nth-child(1) { animation-delay: 300ms; }
+.inicio .paneles > :nth-child(2) { animation-delay: 380ms; }
+
+/* =========================================================
+   4. VENTANAS: fichas, formularios, confirmación y avisos
+   ========================================================= */
+.sg-velo {
+  animation: sg-anim-desvanecer 0.25s ease;
+}
+
+.sg-modal {
+  animation: sg-anim-modal 0.32s var(--sg-anim-curva);
+}
+
+.sg-lateral {
+  animation: sg-anim-lateral 0.32s var(--sg-anim-curva);
+}
+
+/* Contenido de la ficha: entra un instante después de la ventana */
+.sg-modal__cuerpo > *,
+.sg-lateral .sg-modal__cuerpo > * {
+  animation: sg-anim-subir 0.4s var(--sg-anim-curva) 80ms backwards;
+}
+.sg-modal__cuerpo > :nth-child(2) { animation-delay: 130ms; }
+.sg-modal__cuerpo > :nth-child(n+3) { animation-delay: 180ms; }
+
+/* Avisos (toasts) */
+.sg-toast {
+  animation: sg-anim-aviso 0.3s var(--sg-anim-curva);
+}
+
+/* Menú ⋮ de acciones */
+.sg-menu__lista {
+  animation: sg-anim-subir 0.18s ease;
+}
+
+/* En celular el modal sale desde abajo como hoja */
+@media (max-width: 640px) {
+  .sg-modal {
+    animation: sg-anim-hoja 0.34s var(--sg-anim-curva);
+  }
+}
+
+/* =========================================================
+   5. ACCESIBILIDAD: sin movimiento si el usuario lo pidió
+   ========================================================= */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

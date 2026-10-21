@@ -1,0 +1,91 @@
+/* ===== Proyectos · Arquitecto ===== */
+
+.error { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.cargando { opacity: 0.45; pointer-events: none; }
+.centro { text-align: center; }
+.alerta-texto { color: var(--sg-rojo); }
+.sg-indicador small.alerta-texto { color: var(--sg-rojo); }
+
+/* ---------- Tabla ---------- */
+.nombre { display: block; font-size: 16px; font-weight: 700; }
+.sub { display: block; margin-top: 2px; font-size: 13px; color: var(--sg-gris); }
+.fecha { font-size: 13px; font-weight: 600; color: var(--sg-gris); white-space: nowrap; }
+.fecha.alerta-texto { color: var(--sg-rojo); }
+.etiqueta { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.avance { display: flex; align-items: center; gap: 12px; min-width: 140px; }
+.avance .sg-cota { flex: 1; }
+.avance__numero { width: 40px; font-weight: 700; text-align: right; }
+
+/* ---------- Ficha (modal central) ---------- */
+.ficha { width: min(1000px, calc(100vw - 32px)); max-height: calc(100dvh - 64px); }
+
+.ficha__titulo { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 16px; }
+
+.ficha__cuerpo {
+  display: grid; grid-template-columns: minmax(260px, 320px) minmax(0, 1fr); gap: 36px; align-items: start;
+}
+
+.ficha__resumen { display: flex; flex-direction: column; gap: 20px; }
+
+.ficha-avance { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 4px 18px; }
+.ficha-avance strong { grid-row: span 2; font-size: 44px; font-weight: 800; letter-spacing: -0.04em; line-height: 1; }
+
+.ficha-datos {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin: 0; padding: 16px 0;
+  border-top: 1px solid var(--sg-fuerte); border-bottom: 1px solid var(--sg-fuerte);
+}
+.ficha-datos .completo { grid-column: 1 / -1; }
+.ficha-datos dd { margin: 4px 0 0; font-weight: 600; overflow-wrap: anywhere; }
+
+.bloque { display: flex; flex-direction: column; gap: 10px; }
+.bloque__titulo { margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.bloque__titulo small {
+  margin-left: 6px; padding: 2px 8px; border-radius: 12px;
+  background: var(--sg-suave); color: var(--sg-gris); font-size: 12px;
+}
+.observaciones { margin: 0; white-space: pre-wrap; color: var(--sg-gris); font-size: 14px; }
+
+.ficha__conceptos { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+
+.tabla-conceptos { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabla-conceptos th {
+  padding: 0 8px 8px; border-bottom: 1px solid var(--sg-fuerte); text-align: left;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sg-gris);
+}
+.tabla-conceptos td { padding: 10px 8px; border-bottom: 1px solid var(--sg-suave); vertical-align: middle; }
+.tabla-conceptos td:first-child, .tabla-conceptos th:first-child { padding-left: 0; }
+.tabla-conceptos td strong { display: block; }
+.tabla-conceptos td small { display: block; margin-top: 2px; font-size: 13px; color: var(--sg-gris); }
+.fila-clic { cursor: pointer; }
+.fila-clic:hover { background: rgba(250, 200, 43, 0.12); }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1180px) {
+  .col-ocultable { display: none; }
+}
+
+@media (max-width: 900px) {
+  .ficha__cuerpo { grid-template-columns: 1fr; gap: 28px; }
+}
+
+@media (max-width: 640px) {
+  .sg-tabla thead { display: none; }
+  .sg-tabla tbody tr {
+    display: grid; grid-template-columns: 1fr auto; gap: 6px 12px;
+    padding: 16px 0; border-bottom: 1px solid var(--sg-suave);
+  }
+  .sg-tabla td { padding: 0; border: 0; }
+  .sg-tabla td:nth-child(1) { grid-column: 1; grid-row: 1; }
+  .sg-tabla td:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+  .sg-tabla td:nth-child(4) { grid-column: 1; grid-row: 3; }
+  .sg-tabla td:nth-child(5) { grid-column: 2; grid-row: 1; }
+  .ficha { width: 100vw; max-height: 92dvh; }
+  .ficha-avance strong { font-size: 36px; }
+  .tabla-conceptos thead { display: none; }
+  .tabla-conceptos tr { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; padding: 10px 0; border-bottom: 1px solid var(--sg-suave); }
+  .tabla-conceptos td { padding: 0; border: 0; }
+  .tabla-conceptos td:nth-child(1) { grid-column: 1; grid-row: 1; }
+  .tabla-conceptos td:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+  .tabla-conceptos td:nth-child(3) { grid-column: 2; grid-row: 1; }
+}

@@ -1,0 +1,229 @@
+<section class="sg-pagina">
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="sg-cabecera">
+    <div>
+      <p class="sg-label"><span class="sg-punto"></span>{{ dosDigitos(proyectos().length) }} proyectos a tu cargo</p>
+      <h1>Mis proyectos</h1>
+      <p class="sg-cabecera__sub">Clientes, fechas y avance de los proyectos que tienes asignados.</p>
+    </div>
+
+    <div class="sg-cabecera__acciones">
+      <label class="sg-buscador">
+        <app-icono nombre="buscar" />
+        <input class="sg-input" type="search" placeholder="Buscar proyecto, cliente o código"
+               [ngModel]="busqueda()" (ngModelChange)="buscar($event)" aria-label="Buscar proyectos">
+      </label>
+    </div>
+  </header>
+
+  @if (desdeCopia() && !cargando()) {
+    <p class="sg-aviso-copia">
+      <app-icono nombre="wifi-off" />
+      Sin conexión · Mostrando datos guardados el {{ momentoCopia() }}.
+    </p>
+  }
+
+  @if (error()) {
+    <div class="sg-alerta error">
+      {{ error() }}
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="recargar()">Reintentar</button>
+    </div>
+  }
+
+  <!-- ============ INDICADORES ============ -->
+  <div class="sg-indicadores" [class.cargando]="cargando()">
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="proyectos" /><span class="sg-label">01 · En curso</span></div>
+      <strong class="sg-indicador__numero">{{ dosDigitos(indicadores().enCurso) }}</strong>
+      <small>de {{ indicadores().total }} proyectos · {{ indicadores().obras }} obras en total</small>
+    </div>
+
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="avance" /><span class="sg-label">02 · Avance promedio</span></div>
+      <strong class="sg-indicador__numero">{{ indicadores().avancePromedio }}%</strong>
+      <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="indicadores().avancePromedio"></span></div>
+      <small>de los proyectos que siguen vigentes</small>
+    </div>
+
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="calendario" /><span class="sg-label">03 · Próxima entrega</span></div>
+      @if (indicadores().proxima; as p) {
+        <strong class="sg-indicador__numero">{{ fecha(p.fecha_fin) }}</strong>
+        <small>{{ p.nombre }} · {{ plazo(p) }}</small>
+      } @else {
+        <strong class="sg-indicador__numero">—</strong>
+        <small>Sin entregas programadas</small>
+      }
+      @if (indicadores().atrasados) {
+        <small class="alerta-texto">{{ indicadores().atrasados }} proyecto(s) ya pasaron su fecha de entrega</small>
+      }
+    </div>
+  </div>
+
+  <!-- ============ FILTRO POR ESTADO ============ -->
+  <nav class="sg-tabs" aria-label="Filtrar por estado">
+    @for (estado of filtros; track estado) {
+      <button type="button" [class.activo]="filtroEstado() === estado" (click)="filtrar(estado)">
+        {{ estado }} <small>{{ conteos()[estado] ?? 0 }}</small>
+      </button>
+    }
+  </nav>
+
+  <!-- ============ LISTA ============ -->
+  <div class="lista" [class.cargando]="cargando()">
+    @if (paginaActual().length) {
+      <table class="sg-tabla">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Proyecto</th>
+            <th class="centro col-ocultable">Obras</th>
+            <th>Avance</th>
+            <th>Estado</th>
+            <th class="col-ocultable">Entrega</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of paginaActual(); track p.id) {
+            <tr (click)="verProyecto(p)">
+              <td class="sg-codigo">{{ codigo(p.id) }}</td>
+              <td>
+                <strong class="nombre">{{ p.nombre }}</strong>
+                <small class="sub">{{ p.cliente }}</small>
+              </td>
+              <td class="centro col-ocultable">
+                <strong>{{ p.obras.length }}</strong>
+                @if (obrasActivas(p)) { <small class="sub">{{ obrasActivas(p) }} activa(s)</small> }
+              </td>
+              <td>
+                <div class="avance">
+                  <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="avance(p)"></span></div>
+                  <span class="avance__numero">{{ avance(p) }}%</span>
+                </div>
+              </td>
+              <td><span class="sg-chip" [class]="claseEstado(p.estado)">{{ p.estado }}</span></td>
+              <td class="col-ocultable fecha" [class.alerta-texto]="atrasado(p)">
+                {{ fecha(p.fecha_fin) }}
+                @if (plazo(p)) { <small class="etiqueta">{{ plazo(p) }}</small> }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (totalPaginas() > 1) {
+        <div class="sg-paginacion">
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(-1)" [disabled]="pagina() === 1" aria-label="Página anterior">
+            <app-icono nombre="anterior" />
+          </button>
+          <span>{{ dosDigitos(pagina()) }} / {{ dosDigitos(totalPaginas()) }}</span>
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(1)" [disabled]="pagina() === totalPaginas()" aria-label="Página siguiente">
+            <app-icono nombre="siguiente" />
+          </button>
+        </div>
+      }
+    } @else if (!cargando()) {
+      <div class="sg-vacio">
+        <app-icono nombre="proyectos" />
+        @if (busqueda() || filtroEstado() !== 'Todos') {
+          <p>No hay proyectos que coincidan con la búsqueda o el filtro.</p>
+        } @else {
+          <p>Aún no tienes proyectos asignados. El administrador te los asigna desde su pantalla de Proyectos.</p>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- FICHA DEL PROYECTO (modal central)                                 -->
+<!-- ================================================================== -->
+@if (seleccionado(); as p) {
+  <div class="sg-velo" (click)="seleccionado.set(null)"></div>
+  <div class="sg-modal ficha" role="dialog" aria-modal="true" aria-label="Detalle del proyecto">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">Mis proyectos / {{ codigo(p.id) }}</span>
+        <div class="ficha__titulo">
+          <h2>{{ p.nombre }}</h2>
+          <span class="sg-chip" [class]="claseEstado(p.estado)">{{ p.estado }}</span>
+        </div>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="seleccionado.set(null)" aria-label="Cerrar detalle">
+        <app-icono nombre="cerrar" />
+      </button>
+    </header>
+
+    <div class="sg-modal__cuerpo ficha__cuerpo">
+
+      <!-- ===== Columna izquierda: el proyecto ===== -->
+      <section class="ficha__resumen">
+        <div class="ficha-avance">
+          <strong>{{ avance(p) }}%</strong>
+          <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="avance(p)"></span></div>
+          <span class="sg-label">Avance general</span>
+        </div>
+
+        <dl class="ficha-datos">
+          <div class="completo"><dt class="sg-label">Cliente</dt><dd>{{ p.cliente || '—' }}</dd></div>
+          <div><dt class="sg-label">Inicio</dt><dd>{{ fecha(p.fecha_inicio) }}</dd></div>
+          <div>
+            <dt class="sg-label">Entrega</dt>
+            <dd [class.alerta-texto]="atrasado(p)">
+              {{ fecha(p.fecha_fin) }}
+              @if (plazo(p)) { <small class="etiqueta">{{ plazo(p) }}</small> }
+            </dd>
+          </div>
+          <div class="completo"><dt class="sg-label">Ubicación</dt><dd>{{ p.ubicacion || '—' }}</dd></div>
+        </dl>
+
+        @if (p.descripcion) {
+          <div class="bloque">
+            <h3 class="bloque__titulo">Descripción</h3>
+            <p class="observaciones">{{ p.descripcion }}</p>
+          </div>
+        }
+      </section>
+
+      <!-- ===== Columna derecha: obras ===== -->
+      <section class="ficha__conceptos">
+        <h3 class="bloque__titulo">Obras del proyecto <small>{{ p.obras.length }}</small></h3>
+
+        @if (p.obras.length) {
+          <table class="tabla-conceptos">
+            <thead>
+              <tr><th>Obra</th><th>Avance</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+              @for (o of p.obras; track o.id) {
+                <tr class="fila-clic" (click)="irAObras(p, o.id)" title="Abrir en Mis obras">
+                  <td>
+                    <strong>{{ o.nombre }}</strong>
+                    <small>{{ codigoObra(o.id) }} · entrega {{ fecha(o.fecha_fin_estimada) }}</small>
+                  </td>
+                  <td>
+                    <div class="avance">
+                      <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="o.porcentaje_avance"></span></div>
+                      <span class="avance__numero">{{ o.porcentaje_avance }}%</span>
+                    </div>
+                  </td>
+                  <td><span class="sg-chip" [class]="claseEstado(o.estado)">{{ estadoTexto(o.estado) }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="sg-vacio">Este proyecto aún no tiene obras registradas.</p>
+        }
+      </section>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="seleccionado.set(null)">Cerrar</button>
+      <button type="button" class="sg-btn sg-btn--chico" (click)="irAObras(p)">
+        <app-icono nombre="obras" /> Ir a las obras de este proyecto
+      </button>
+    </footer>
+  </div>
+}

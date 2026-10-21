@@ -1,0 +1,53 @@
+/* ===== Vista previa de documentos (recibo, cotización, contrato) =====
+   Modal centrado del tamaño de la pantalla; en celular ocupa toda la pantalla.
+   Capa: encima de la confirmación (1500) y debajo del visor de imágenes (2000). */
+.sg-velo--documento { z-index: 1600; }
+
+.documento {
+  position: fixed; left: 50%; top: 50%; z-index: 1601;
+  display: flex; flex-direction: column;
+  width: min(920px, calc(100vw - 48px));
+  height: min(1100px, calc(100dvh - 48px));
+  background: var(--sg-papel);
+  border: 1px solid var(--sg-negro); border-radius: 8px;
+  overflow: hidden;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 24px 60px rgba(22, 22, 22, 0.25);
+  animation: documento-entrar 0.22s cubic-bezier(0.22, 0.7, 0.2, 1);
+}
+
+.documento__cabecera {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 14px 22px; border-bottom: 1px solid var(--sg-fuerte);
+}
+.documento__cabecera h2 { margin-top: 2px; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+
+.documento__marco { flex: 1; width: 100%; border: 0; background: #ffffff; }
+
+.documento__pie {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 12px 22px; border-top: 1px solid var(--sg-fuerte);
+}
+.documento__pie small { margin-right: auto; color: var(--sg-gris); font-size: 12px; }
+.documento__pie app-icono { width: 16px; height: 16px; }
+
+@keyframes documento-entrar {
+  from { opacity: 0; transform: translate(-50%, -47%); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+@media (max-width: 640px) {
+  .documento {
+    inset: 0; width: auto; height: auto;
+    transform: none; border: 0; border-radius: 0;
+    animation: sg-aparecer 0.15s ease;
+  }
+  .documento__cabecera, .documento__pie { padding-left: 16px; padding-right: 16px; }
+  .documento__pie { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .documento__pie small { display: none; }
+  .documento__pie .sg-btn { flex: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .documento { animation: none; }
+}

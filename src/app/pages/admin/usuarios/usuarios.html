@@ -1,0 +1,360 @@
+<section class="sg-pagina">
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="sg-cabecera">
+    <div>
+      <p class="sg-label"><span class="sg-punto"></span>{{ dosDigitos(clientes().length + arquitectos().length) }} cuentas registradas</p>
+      <h1>Usuarios</h1>
+      <p class="sg-cabecera__sub">Clientes y arquitectos del despacho: contacto, acceso al sistema y proyectos de cada uno.</p>
+    </div>
+
+    <div class="sg-cabecera__acciones">
+      <label class="sg-buscador">
+        <app-icono nombre="buscar" />
+        <input class="sg-input" type="search" [placeholder]="'Buscar ' + singular(tipo()) + ', correo o teléfono'"
+               [ngModel]="busqueda()" (ngModelChange)="buscar($event)" aria-label="Buscar usuarios">
+      </label>
+      <button type="button" class="sg-btn" (click)="nuevaPersona()" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="mas" /> Nuevo {{ singular(tipo()) }}
+      </button>
+    </div>
+  </header>
+
+  @if (desdeCopia() && !cargando()) {
+    <p class="sg-aviso-copia">
+      <app-icono nombre="wifi-off" />
+      Sin conexión · Mostrando datos guardados el {{ momentoCopia() }}. Registrar, editar y eliminar se habilitan al volver la conexión.
+    </p>
+  }
+
+  @if (error()) {
+    <div class="sg-alerta error">
+      {{ error() }}
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="recargar()">Reintentar</button>
+    </div>
+  }
+
+  <!-- ============ INDICADORES ============ -->
+  <div class="sg-indicadores" [class.cargando]="cargando()">
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="usuarios" /><span class="sg-label">01 · Clientes</span></div>
+      <strong class="sg-indicador__numero">{{ dosDigitos(indicadores().clientesActivos) }}</strong>
+      <small>activos de {{ indicadores().clientes }} · {{ indicadores().clientesConProyecto }} con proyecto</small>
+    </div>
+
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="proyectos" /><span class="sg-label">02 · Arquitectos</span></div>
+      <strong class="sg-indicador__numero">{{ dosDigitos(indicadores().arquitectosActivos) }}</strong>
+      <small>
+        {{ indicadores().cargaPromedio }} proyectos en curso por arquitecto
+        @if (indicadores().sinArquitecto) {
+          · <b class="alerta-texto">{{ indicadores().sinArquitecto }} sin asignar</b>
+        }
+      </small>
+    </div>
+
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="salir" /><span class="sg-label">03 · Sin acceso</span></div>
+      <strong class="sg-indicador__numero">{{ dosDigitos(indicadores().inactivos) }}</strong>
+      <small>cuentas desactivadas (no pueden iniciar sesión)</small>
+    </div>
+  </div>
+
+  <!-- ============ TIPO Y ESTADO ============ -->
+  <div class="filtros">
+    <nav class="sg-tabs" aria-label="Tipo de usuario">
+      <button type="button" [class.activo]="tipo() === 'clientes'" (click)="cambiarTipo('clientes')">
+        Clientes <small>{{ clientes().length }}</small>
+      </button>
+      <button type="button" [class.activo]="tipo() === 'arquitectos'" (click)="cambiarTipo('arquitectos')">
+        Arquitectos <small>{{ arquitectos().length }}</small>
+      </button>
+    </nav>
+
+    <div class="segmento" role="group" aria-label="Filtrar por acceso">
+      @for (estado of filtrosEstado; track estado) {
+        <button type="button" [class.activo]="filtroEstado() === estado" (click)="filtrar(estado)">
+          {{ estado }} <small>{{ conteos()[estado] }}</small>
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- ============ LISTA ============ -->
+  <div class="lista" [class.cargando]="cargando()">
+    @if (paginaActual().length) {
+      <table class="sg-tabla">
+        <thead>
+          <tr>
+            <th>{{ singular(tipo(), true) }}</th>
+            <th class="col-ocultable">Teléfono</th>
+            <th class="col-ocultable">{{ tipo() === 'clientes' ? 'Dirección' : 'Alta' }}</th>
+            <th class="centro">Proyectos</th>
+            <th>Acceso</th>
+            <th><span class="sg-sr">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of paginaActual(); track p.id) {
+            <tr (click)="verPersona(p)" [class.inactivo]="!p.activo">
+              <td>
+                <div class="persona">
+                  <span class="avatar">{{ iniciales(p) }}</span>
+                  <div>
+                    <strong class="nombre">{{ p.nombre }} {{ p.apellidos }}</strong>
+                    <small class="sub">{{ p.correo }}</small>
+                  </div>
+                </div>
+              </td>
+              <td class="col-ocultable dato">{{ telefono(p.telefono) }}</td>
+              <td class="col-ocultable dato">
+                {{ tipo() === 'clientes' ? (p.direccion || '—') : fecha(p.fecha_registro) }}
+              </td>
+              <td class="centro">
+                <strong>{{ p.proyectos }}</strong>
+                @if (proyectosEnCurso(p)) { <small class="sub">{{ proyectosEnCurso(p) }} en curso</small> }
+              </td>
+              <td><span class="sg-chip" [class.sg-chip--activo]="p.activo" [class.sg-chip--cancelado]="!p.activo">{{ p.activo ? 'Activo' : 'Inactivo' }}</span></td>
+              <td class="acciones" (click)="$event.stopPropagation()">
+                <div class="sg-menu">
+                  <button type="button" class="sg-icono-btn" (click)="alternarMenu(p.id, $event)" aria-label="Más acciones">
+                    <app-icono nombre="opciones" />
+                  </button>
+                  @if (menuAbierto() === p.id) {
+                    <div class="sg-menu__velo" (click)="menuAbierto.set(null)"></div>
+                    <div class="sg-menu__lista">
+                      <button type="button" (click)="verPersona(p)"><app-icono nombre="ver" /> Ver ficha</button>
+                      <button type="button" (click)="editarPersona(p)" [disabled]="!conexion.enLinea()"><app-icono nombre="editar" /> Editar</button>
+                      <button type="button" (click)="cambiarAcceso(p)" [disabled]="!conexion.enLinea()">
+                        <app-icono [nombre]="p.activo ? 'salir' : 'usuarios'" /> {{ p.activo ? 'Desactivar acceso' : 'Activar acceso' }}
+                      </button>
+                      <hr>
+                      <button type="button" class="sg-menu__peligro" (click)="eliminarPersona(p)" [disabled]="!conexion.enLinea()">
+                        <app-icono nombre="borrar" /> Eliminar
+                      </button>
+                    </div>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (totalPaginas() > 1) {
+        <div class="sg-paginacion">
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(-1)" [disabled]="pagina() === 1" aria-label="Página anterior">
+            <app-icono nombre="anterior" />
+          </button>
+          <span>{{ dosDigitos(pagina()) }} / {{ dosDigitos(totalPaginas()) }}</span>
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(1)" [disabled]="pagina() === totalPaginas()" aria-label="Página siguiente">
+            <app-icono nombre="siguiente" />
+          </button>
+        </div>
+      }
+    } @else if (!cargando()) {
+      <div class="sg-vacio">
+        <app-icono nombre="usuarios" />
+        @if (busqueda() || filtroEstado() !== 'Todos') {
+          <p>No hay {{ tipo() }} que coincidan con la búsqueda o el filtro.</p>
+        } @else {
+          <p>Aún no hay {{ tipo() }} registrados.</p>
+          @if (conexion.enLinea()) {
+            <button type="button" class="enlace" (click)="nuevaPersona()">Registrar el primer {{ singular(tipo()) }}</button>
+          }
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- FICHA DE LA PERSONA (modal central)                                -->
+<!-- ================================================================== -->
+@if (seleccionado(); as p) {
+  <div class="sg-velo" (click)="seleccionado.set(null)"></div>
+  <div class="sg-modal ficha" role="dialog" aria-modal="true" [attr.aria-label]="'Ficha del ' + singular(tipo())">
+    <header class="sg-modal__cabecera">
+      <div class="ficha__persona">
+        <span class="avatar avatar--grande">{{ iniciales(p) }}</span>
+        <div>
+          <span class="sg-label">{{ singular(tipo(), true) }}</span>
+          <div class="ficha__titulo">
+            <h2>{{ p.nombre }} {{ p.apellidos }}</h2>
+            <span class="sg-chip" [class.sg-chip--activo]="p.activo" [class.sg-chip--cancelado]="!p.activo">{{ p.activo ? 'Activo' : 'Inactivo' }}</span>
+          </div>
+        </div>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="seleccionado.set(null)" aria-label="Cerrar ficha">
+        <app-icono nombre="cerrar" />
+      </button>
+    </header>
+
+    <div class="sg-modal__cuerpo ficha__cuerpo">
+
+      <!-- ===== Columna izquierda: contacto y acceso ===== -->
+      <section class="ficha__resumen">
+        <dl class="ficha-datos">
+          <div class="completo"><dt class="sg-label">Correo</dt><dd><a [href]="'mailto:' + p.correo">{{ p.correo }}</a></dd></div>
+          <div>
+            <dt class="sg-label">Teléfono</dt>
+            <dd>
+              @if (p.telefono) { <a [href]="'tel:' + p.telefono">{{ telefono(p.telefono) }}</a> } @else { — }
+            </dd>
+          </div>
+          <div><dt class="sg-label">Alta</dt><dd>{{ fecha(p.fecha_registro) }}</dd></div>
+          @if (tipo() === 'clientes') {
+            <div class="completo"><dt class="sg-label">Dirección</dt><dd>{{ p.direccion || '—' }}</dd></div>
+          }
+        </dl>
+
+        <div class="bloque">
+          <h3 class="bloque__titulo">Acceso al sistema</h3>
+          <p class="ayuda">
+            {{ p.activo
+              ? 'Puede iniciar sesión y aparece al asignar proyectos.'
+              : 'No puede iniciar sesión ni aparece al crear proyectos. Sus registros se conservan.' }}
+          </p>
+          <div class="estado-rapido">
+            <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="cambiarAcceso(p)"
+                    [disabled]="!conexion.enLinea() || (p.activo && !!motivoNoDesactivar(p))"
+                    [attr.title]="p.activo ? (motivoNoDesactivar(p) || null) : null">
+              <app-icono [nombre]="p.activo ? 'salir' : 'usuarios'" /> {{ p.activo ? 'Desactivar acceso' : 'Activar acceso' }}
+            </button>
+          </div>
+          @if (p.activo && motivoNoDesactivar(p)) {
+            <small class="ayuda alerta-texto">{{ motivoNoDesactivar(p) }}</small>
+          }
+        </div>
+      </section>
+
+      <!-- ===== Columna derecha: proyectos ===== -->
+      <section class="ficha__conceptos">
+        <h3 class="bloque__titulo">
+          {{ tipo() === 'clientes' ? 'Proyectos contratados' : 'Proyectos a su cargo' }} <small>{{ proyectosDe(p).length }}</small>
+        </h3>
+
+        @if (proyectosDe(p).length) {
+          <table class="tabla-conceptos">
+            <thead>
+              <tr>
+                <th>Proyecto</th>
+                <th>Avance</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (pr of proyectosDe(p); track pr.id) {
+                <tr>
+                  <td>
+                    <strong>{{ pr.nombre }}</strong>
+                    <small>{{ codigoProyecto(pr.id) }} · {{ tipo() === 'clientes' ? (pr.arquitecto || 'Sin arquitecto') : pr.cliente }}</small>
+                  </td>
+                  <td>
+                    <div class="avance">
+                      <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="pr.avance"></span></div>
+                      <span class="avance__numero">{{ pr.avance }}%</span>
+                    </div>
+                  </td>
+                  <td><span class="sg-chip" [class]="claseEstadoProyecto(pr.estado)">{{ pr.estado }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="sg-vacio">{{ tipo() === 'clientes' ? 'Aún no tiene proyectos.' : 'Aún no tiene proyectos asignados.' }}</p>
+        }
+
+        <button type="button" class="ficha-enlace" (click)="irAProyectos()">
+          <app-icono nombre="proyectos" /> Ir a proyectos <app-icono nombre="siguiente" />
+        </button>
+      </section>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico peligro-texto"
+              (click)="eliminarPersona(p)" [disabled]="!conexion.enLinea()">Eliminar</button>
+      <button type="button" class="sg-btn sg-btn--chico" (click)="editarPersona(p)" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="editar" /> Editar
+      </button>
+    </footer>
+  </div>
+}
+
+<!-- ================================================================== -->
+<!-- FORMULARIO (crear / editar)                                        -->
+<!-- ================================================================== -->
+@if (formPersona(); as form) {
+  <div class="sg-velo sg-velo--alto" (click)="formPersona.set(null)"></div>
+  <form class="sg-modal sg-modal--alto" (ngSubmit)="guardarPersona()" autocomplete="off">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">{{ form.id ? 'Editar' : 'Nuevo registro' }}</span>
+        <h2>{{ form.id ? 'Editar ' + singular(form.tipo) : 'Nuevo ' + singular(form.tipo) }}</h2>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="formPersona.set(null)" aria-label="Cerrar"><app-icono nombre="cerrar" /></button>
+    </header>
+
+    <div class="sg-modal__cuerpo sg-form">
+      <div class="sg-campo">
+        <label class="sg-label" for="u-nombre">Nombre *</label>
+        <input id="u-nombre" class="sg-input" name="nombre" [(ngModel)]="form.nombre" required maxlength="100">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="u-apellidos">Apellidos *</label>
+        <input id="u-apellidos" class="sg-input" name="apellidos" [(ngModel)]="form.apellidos" required maxlength="100">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="u-correo">Correo *</label>
+        <input id="u-correo" class="sg-input" type="email" name="correo" [(ngModel)]="form.correo" required maxlength="150"
+               placeholder="nombre@correo.com">
+        <small class="ayuda">Con este correo inicia sesión.</small>
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="u-telefono">Teléfono</label>
+        <input id="u-telefono" class="sg-input" type="tel" name="telefono" [(ngModel)]="form.telefono" maxlength="14"
+               placeholder="10 dígitos">
+      </div>
+
+      @if (form.tipo === 'clientes') {
+        <div class="sg-campo sg-campo--completo">
+          <label class="sg-label" for="u-direccion">Dirección</label>
+          <input id="u-direccion" class="sg-input" name="direccion" [(ngModel)]="form.direccion" maxlength="255"
+                 placeholder="Calle, número, colonia, municipio">
+        </div>
+      }
+
+      <div class="sg-campo sg-campo--completo separador">
+        <span class="sg-label">Contraseña de acceso</span>
+        <small class="ayuda">
+          {{ form.id ? 'Déjala vacía para conservar la actual.' : 'Mínimo 8 caracteres, con letras y números.' }}
+        </small>
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="u-password">{{ form.id ? 'Nueva contraseña' : 'Contraseña *' }}</label>
+        <input id="u-password" class="sg-input" [type]="verPassword() ? 'text' : 'password'" name="password"
+               [(ngModel)]="form.password" autocomplete="new-password">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="u-confirmar">Confirmar contraseña{{ form.id ? '' : ' *' }}</label>
+        <input id="u-confirmar" class="sg-input" [type]="verPassword() ? 'text' : 'password'" name="confirmar"
+               [(ngModel)]="form.confirmar" autocomplete="new-password">
+        <button type="button" class="enlace enlace--chico" (click)="verPassword.set(!verPassword())">
+          {{ verPassword() ? 'Ocultar' : 'Mostrar' }} contraseña
+        </button>
+      </div>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="formPersona.set(null)">Cancelar</button>
+      <button type="submit" class="sg-btn sg-btn--chico" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : (form.id ? 'Guardar cambios' : 'Registrar ' + singular(form.tipo)) }}
+      </button>
+    </footer>
+  </form>
+}

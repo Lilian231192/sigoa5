@@ -1,0 +1,423 @@
+<section class="sg-pagina">
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="sg-cabecera">
+    <div>
+      <p class="sg-label"><span class="sg-punto"></span>{{ dosDigitos(delProyecto().length) }} cotizaciones registradas</p>
+      <h1>Cotizaciones</h1>
+      <p class="sg-cabecera__sub">Propuestas económicas por proyecto: conceptos, montos, vigencia y respuesta del cliente.</p>
+    </div>
+
+    <div class="sg-cabecera__acciones">
+      <label class="sg-buscador">
+        <app-icono nombre="buscar" />
+        <input class="sg-input" type="search" placeholder="Buscar folio, proyecto o cliente"
+               [ngModel]="busqueda()" (ngModelChange)="buscar($event)" aria-label="Buscar cotizaciones">
+      </label>
+      <button type="button" class="sg-btn" (click)="nuevaCotizacion()" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="mas" /> Nueva cotización
+      </button>
+    </div>
+  </header>
+
+  @if (desdeCopia() && !cargando()) {
+    <p class="sg-aviso-copia">
+      <app-icono nombre="wifi-off" />
+      Sin conexión · Mostrando datos guardados el {{ momentoCopia() }}. Crear, editar y eliminar se habilitan al volver la conexión.
+    </p>
+  }
+
+  @if (error()) {
+    <div class="sg-alerta error">
+      {{ error() }}
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="recargar()">Reintentar</button>
+    </div>
+  }
+
+  @if (idProyectoFiltro()) {
+    <div class="sg-filtro-proyecto">
+      <span class="sg-label">Proyecto</span>
+      <strong>{{ codigoProyecto(idProyectoFiltro()) }} · {{ nombreProyectoFiltro() || 'Seleccionado' }}</strong>
+      <button type="button" class="sg-icono-btn" (click)="quitarFiltroProyecto()" aria-label="Ver todas las cotizaciones">
+        <app-icono nombre="cerrar" />
+      </button>
+    </div>
+  }
+
+  <!-- ============ INDICADORES ============ -->
+  <div class="sg-indicadores" [class.cargando]="cargando()">
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="cotizaciones" /><span class="sg-label">01 · Total cotizado</span></div>
+      <strong class="sg-indicador__numero">{{ dinero(indicadores().cotizado) }}</strong>
+      <small>{{ indicadores().emitidas }} cotizaciones enviadas al cliente</small>
+    </div>
+
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="contratos" /><span class="sg-label">02 · Aceptado</span></div>
+      <strong class="sg-indicador__numero">{{ dinero(indicadores().aceptado) }}</strong>
+      <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="indicadores().tasa"></span></div>
+      <small>{{ indicadores().tasa }}% de aceptación · {{ indicadores().aceptadas }} aceptadas</small>
+    </div>
+
+    <div class="sg-indicador">
+      <div class="sg-indicador__cabeza"><app-icono nombre="calendario" /><span class="sg-label">03 · Por responder</span></div>
+      <strong class="sg-indicador__numero">{{ dosDigitos(indicadores().porResponder) }}</strong>
+      <small>
+        {{ dinero(indicadores().montoPorResponder) }} en espera
+        @if (indicadores().porVencer) { · <b class="alerta-texto">{{ indicadores().porVencer }} vence(n) esta semana</b> }
+      </small>
+    </div>
+  </div>
+
+  <!-- ============ FILTRO POR ESTADO ============ -->
+  <nav class="sg-tabs" aria-label="Filtrar por estado">
+    @for (estado of filtros; track estado) {
+      <button type="button" [class.activo]="filtroEstado() === estado" (click)="filtrar(estado)">
+        {{ estado }} <small>{{ conteos()[estado] ?? 0 }}</small>
+      </button>
+    }
+  </nav>
+
+  <!-- ============ LISTA ============ -->
+  <div class="lista" [class.cargando]="cargando()">
+    @if (paginaActual().length) {
+      <table class="sg-tabla">
+        <thead>
+          <tr>
+            <th>Folio</th>
+            <th>Proyecto</th>
+            <th class="col-ocultable">Fecha</th>
+            <th class="col-ocultable">Vigencia</th>
+            <th class="der">Total</th>
+            <th>Estado</th>
+            <th><span class="sg-sr">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (c of paginaActual(); track c.id) {
+            <tr (click)="verCotizacion(c)">
+              <td class="sg-codigo">{{ c.folio }}</td>
+              <td>
+                <strong class="nombre">{{ c.proyecto }}</strong>
+                <small class="sub">{{ c.cliente }}</small>
+              </td>
+              <td class="col-ocultable fecha">{{ fecha(c.fecha) }}</td>
+              <td class="col-ocultable fecha" [class.alerta-texto]="vencida(c) || vencePronto(c)">
+                {{ fecha(c.vigencia) }}
+                @if (vencida(c)) { <small class="etiqueta">Venció</small> }
+                @else if (vencePronto(c)) { <small class="etiqueta">Vence pronto</small> }
+              </td>
+              <td class="der total">{{ moneda(c.total) }}</td>
+              <td><span class="sg-chip" [class]="claseEstado(c.estado)">{{ c.estado }}</span></td>
+              <td class="acciones" (click)="$event.stopPropagation()">
+                <div class="sg-menu">
+                  <button type="button" class="sg-icono-btn" (click)="alternarMenu(c.id, $event)" aria-label="Más acciones">
+                    <app-icono nombre="opciones" />
+                  </button>
+                  @if (menuAbierto() === c.id) {
+                    <div class="sg-menu__velo" (click)="menuAbierto.set(null)"></div>
+                    <div class="sg-menu__lista">
+                      <button type="button" (click)="verCotizacion(c)"><app-icono nombre="ver" /> Ver detalle</button>
+                      <button type="button" (click)="editarCotizacion(c)" [disabled]="!conexion.enLinea()"><app-icono nombre="editar" /> Editar</button>
+                      <button type="button" (click)="descargarPdf(c)"><app-icono nombre="descargar" /> Descargar PDF</button>
+                      <hr>
+                      <button type="button" class="sg-menu__peligro" (click)="eliminarCotizacion(c)" [disabled]="!conexion.enLinea()">
+                        <app-icono nombre="borrar" /> Eliminar
+                      </button>
+                    </div>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (totalPaginas() > 1) {
+        <div class="sg-paginacion">
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(-1)" [disabled]="pagina() === 1" aria-label="Página anterior">
+            <app-icono nombre="anterior" />
+          </button>
+          <span>{{ dosDigitos(pagina()) }} / {{ dosDigitos(totalPaginas()) }}</span>
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(1)" [disabled]="pagina() === totalPaginas()" aria-label="Página siguiente">
+            <app-icono nombre="siguiente" />
+          </button>
+        </div>
+      }
+    } @else if (!cargando()) {
+      <div class="sg-vacio">
+        <app-icono nombre="cotizaciones" />
+        @if (busqueda() || filtroEstado() !== 'Todos') {
+          <p>No hay cotizaciones que coincidan con la búsqueda o el filtro.</p>
+        } @else {
+          <p>Aún no hay cotizaciones{{ idProyectoFiltro() ? ' para este proyecto' : '' }}.</p>
+          @if (conexion.enLinea()) {
+            <button type="button" class="enlace" (click)="nuevaCotizacion()">Crear la primera cotización</button>
+          }
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<!-- FICHA DE LA COTIZACIÓN (modal central)                             -->
+<!-- ================================================================== -->
+@if (seleccionada(); as c) {
+  <div class="sg-velo" (click)="seleccionada.set(null)"></div>
+  <div class="sg-modal ficha" role="dialog" aria-modal="true" aria-label="Detalle de la cotización">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">Cotizaciones / {{ c.folio }}</span>
+        <div class="ficha__titulo">
+          <h2>{{ c.proyecto }}</h2>
+          <span class="sg-chip" [class]="claseEstado(c.estado)">{{ c.estado }}</span>
+        </div>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="seleccionada.set(null)" aria-label="Cerrar detalle">
+        <app-icono nombre="cerrar" />
+      </button>
+    </header>
+
+    <div class="sg-modal__cuerpo ficha__cuerpo">
+
+      <!-- ===== Columna izquierda: resumen ===== -->
+      <section class="ficha__resumen">
+        <div class="ficha-total">
+          <span class="sg-label">Total con IVA</span>
+          <strong>{{ moneda(c.total) }}</strong>
+        </div>
+
+        <dl class="ficha-datos">
+          <div><dt class="sg-label">Cliente</dt><dd>{{ c.cliente || '—' }}</dd></div>
+          <div><dt class="sg-label">Proyecto</dt><dd>{{ codigoProyecto(c.id_proyecto) }}</dd></div>
+          <div><dt class="sg-label">Fecha</dt><dd>{{ fecha(c.fecha) }}</dd></div>
+          <div>
+            <dt class="sg-label">Válida hasta</dt>
+            <dd [class.alerta-texto]="vencida(c) || vencePronto(c)">
+              {{ fecha(c.vigencia) }}
+              @if (vencida(c)) { <small class="etiqueta">Venció</small> }
+              @else if (vencePronto(c)) { <small class="etiqueta">Vence pronto</small> }
+            </dd>
+          </div>
+        </dl>
+
+        <!-- Cambio rápido de estado -->
+        @if (accionesEstado(c).length) {
+          <div class="bloque">
+            <h3 class="bloque__titulo">Respuesta del cliente</h3>
+            <div class="estado-rapido">
+              @for (a of accionesEstado(c); track a.estado) {
+                <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="cambiarEstado(c, a.estado)"
+                        [disabled]="!conexion.enLinea() || !!a.motivo" [attr.title]="a.motivo || null">
+                  {{ a.texto }}
+                </button>
+              }
+            </div>
+            @if (vencida(c)) {
+              <small class="ayuda">La vigencia ya pasó: márcala como vencida o edítala para reenviarla.</small>
+            }
+          </div>
+        }
+
+        @if (c.observaciones) {
+          <div class="bloque">
+            <h3 class="bloque__titulo">Observaciones</h3>
+            <p class="observaciones">{{ c.observaciones }}</p>
+          </div>
+        }
+
+        @if (c.estado === 'Aceptada') {
+          <button type="button" class="ficha-enlace" (click)="irAContratos(c)">
+            <app-icono nombre="contratos" /> Ver contratos del proyecto <app-icono nombre="siguiente" />
+          </button>
+        }
+      </section>
+
+      <!-- ===== Columna derecha: conceptos y montos ===== -->
+      <section class="ficha__conceptos">
+        <h3 class="bloque__titulo">Conceptos <small>{{ c.detalles.length }}</small></h3>
+
+        @if (c.detalles.length) {
+          <table class="tabla-conceptos">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Concepto</th>
+                <th class="der">Cantidad</th>
+                <th class="der">P. unitario</th>
+                <th class="der">Importe</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (d of c.detalles; track $index) {
+                <tr>
+                  <td class="num">{{ dosDigitos($index + 1) }}</td>
+                  <td>
+                    <strong>{{ d.concepto }}</strong>
+                    @if (d.descripcion) { <small>{{ d.descripcion }}</small> }
+                  </td>
+                  <td class="der">{{ d.cantidad }} {{ d.unidad }}</td>
+                  <td class="der">{{ moneda(d.precio_unitario) }}</td>
+                  <td class="der importe">{{ moneda(d.importe) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="sg-vacio">Esta cotización no tiene conceptos.</p>
+        }
+
+        <div class="montos">
+          <div><span>Subtotal</span><span>{{ moneda(c.subtotal) }}</span></div>
+          <div><span>IVA</span><span>{{ moneda(c.iva) }}</span></div>
+          <div class="montos__total"><span>Total</span><span>{{ moneda(c.total) }}</span></div>
+        </div>
+      </section>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico peligro-texto"
+              (click)="eliminarCotizacion(c)" [disabled]="!conexion.enLinea()">Eliminar</button>
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="descargarPdf(c)">
+        <app-icono nombre="descargar" /> PDF
+      </button>
+      <button type="button" class="sg-btn sg-btn--chico" (click)="editarCotizacion(c)" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="editar" /> Editar
+      </button>
+    </footer>
+  </div>
+}
+
+<!-- ================================================================== -->
+
+<!-- ================================================================== -->
+<!-- FORMULARIO DE COTIZACIÓN (crear / editar)                          -->
+<!-- ================================================================== -->
+@if (formCotizacion(); as form) {
+  <div class="sg-velo sg-velo--alto" (click)="formCotizacion.set(null)"></div>
+  <form class="sg-modal sg-modal--alto form-ancho" (ngSubmit)="guardarCotizacion()">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">{{ form.id ? form.folio : 'Nuevo registro' }}</span>
+        <h2>{{ form.id ? 'Editar cotización' : 'Nueva cotización' }}</h2>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="formCotizacion.set(null)" aria-label="Cerrar"><app-icono nombre="cerrar" /></button>
+    </header>
+
+    <div class="sg-modal__cuerpo">
+      <!-- Datos generales -->
+      <div class="sg-form generales">
+        <div class="sg-campo sg-campo--completo">
+          <label class="sg-label" for="c-proyecto">Proyecto *</label>
+          <select id="c-proyecto" class="sg-select" name="id_proyecto" [(ngModel)]="form.id_proyecto" required>
+            <option [ngValue]="null" disabled>Selecciona un proyecto</option>
+            @for (p of proyectos(); track p.id) {
+              <option [ngValue]="p.id">{{ codigoProyecto(p.id) }} · {{ p.nombre }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="sg-campo">
+          <label class="sg-label" for="c-folio">Folio *</label>
+          <input id="c-folio" class="sg-input" name="folio" [(ngModel)]="form.folio" required maxlength="50" placeholder="COT-2026-003">
+        </div>
+
+        <div class="sg-campo">
+          <label class="sg-label" for="c-estado">Estado</label>
+          <select id="c-estado" class="sg-select" name="estado" [(ngModel)]="form.estado">
+            @for (e of estados; track e) {
+              <option [value]="e" [disabled]="!!motivoEstado(form, e)">
+                {{ e }}{{ motivoEstado(form, e) ? ' (' + motivoEstado(form, e) + ')' : '' }}
+              </option>
+            }
+          </select>
+        </div>
+
+        <div class="sg-campo">
+          <label class="sg-label" for="c-fecha">Fecha *</label>
+          <input id="c-fecha" class="sg-input" type="date" name="fecha" [(ngModel)]="form.fecha" required>
+        </div>
+
+        <div class="sg-campo">
+          <label class="sg-label" for="c-vigencia">Válida hasta{{ form.estado !== 'Borrador' ? ' *' : '' }}</label>
+          <input id="c-vigencia" class="sg-input" type="date" name="vigencia" [(ngModel)]="form.vigencia" [min]="form.fecha">
+        </div>
+      </div>
+
+      <!-- Conceptos -->
+      <div class="ficha-titulo">
+        <h3>Conceptos <small>{{ form.detalles.length }}</small></h3>
+        @if (!bloqueaConceptos(form)) {
+          <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="agregarConcepto(form)">
+            <app-icono nombre="mas" /> Agregar concepto
+          </button>
+        }
+      </div>
+
+      @if (bloqueaConceptos(form)) {
+        <p class="bloqueado-nota">
+          Esta cotización ya fue <strong>aceptada</strong>: sus conceptos y montos quedan fijos.
+          Solo puedes cambiar folio, fechas, estado y observaciones.
+        </p>
+      }
+
+      <div class="conceptos" [class.conceptos--bloqueado]="bloqueaConceptos(form)">
+        <div class="conceptos__cabeza" aria-hidden="true">
+          <span>Concepto</span><span>Unidad</span><span>Cantidad</span><span>Precio unit.</span><span class="der">Importe</span><span></span>
+        </div>
+
+        @for (d of form.detalles; track d.clave; let i = $index) {
+          <div class="conceptos__fila">
+            <div class="conceptos__concepto">
+              <input class="sg-input" name="concepto{{ d.clave }}" [(ngModel)]="d.concepto" maxlength="255"
+                     placeholder="Ej. Proyecto arquitectónico" [disabled]="bloqueaConceptos(form)" [attr.aria-label]="'Concepto ' + (i + 1)">
+              <input class="sg-input sg-input--sub" name="descripcion{{ d.clave }}" [(ngModel)]="d.descripcion"
+                     placeholder="Descripción (opcional)" [disabled]="bloqueaConceptos(form)" aria-label="Descripción del concepto">
+            </div>
+            <input class="sg-input" name="unidad{{ d.clave }}" [(ngModel)]="d.unidad" list="unidades" maxlength="30"
+                   placeholder="m²" [disabled]="bloqueaConceptos(form)" aria-label="Unidad">
+            <input class="sg-input" type="number" min="0.01" step="0.01" name="cantidad{{ d.clave }}" [(ngModel)]="d.cantidad"
+                   [disabled]="bloqueaConceptos(form)" aria-label="Cantidad">
+            <input class="sg-input" type="number" min="0" step="0.01" name="precio{{ d.clave }}" [(ngModel)]="d.precio_unitario"
+                   [disabled]="bloqueaConceptos(form)" aria-label="Precio unitario">
+            <span class="conceptos__importe">{{ moneda(importeFila(d)) }}</span>
+            <button type="button" class="sg-icono-btn" (click)="quitarConcepto(form, d.clave)"
+                    [disabled]="bloqueaConceptos(form)" aria-label="Quitar concepto">
+              <app-icono nombre="borrar" />
+            </button>
+          </div>
+        }
+        <datalist id="unidades">
+          @for (u of unidades; track u) { <option [value]="u"></option> }
+        </datalist>
+      </div>
+
+      <!-- Totales en vivo -->
+      <div class="totales">
+        <div class="sg-campo iva">
+          <label class="sg-label" for="c-iva">IVA %</label>
+          <input id="c-iva" class="sg-input" type="number" min="0" max="100" step="1" name="porcentaje_iva"
+                 [(ngModel)]="form.porcentaje_iva" [disabled]="bloqueaConceptos(form)">
+        </div>
+        <div class="montos">
+          <div><span>Subtotal</span><span>{{ moneda(montos(form).subtotal) }}</span></div>
+          <div><span>IVA</span><span>{{ moneda(montos(form).iva) }}</span></div>
+          <div class="montos__total"><span>Total</span><span>{{ moneda(montos(form).total) }}</span></div>
+        </div>
+      </div>
+
+      <div class="sg-campo sg-campo--completo observaciones-campo">
+        <label class="sg-label" for="c-observaciones">Observaciones</label>
+        <textarea id="c-observaciones" class="sg-textarea" name="observaciones" [(ngModel)]="form.observaciones"
+                  placeholder="Forma de pago, tiempos de entrega, lo que no incluye la cotización"></textarea>
+      </div>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="formCotizacion.set(null)">Cancelar</button>
+      <button type="submit" class="sg-btn sg-btn--chico" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : (form.id ? 'Guardar cambios' : 'Crear cotización') }}
+      </button>
+    </footer>
+  </form>
+}

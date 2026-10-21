@@ -1,0 +1,113 @@
+/* ===== Portal del cliente · "Mi obra" =====
+   La base (encabezado, rótulo, secciones, medidor, lista de obras, línea de tiempo)
+   viene de admin/inicio/inicio.css. Aquí solo va lo propio del portal. */
+
+.alerta-texto { color: var(--sg-rojo); }
+.der { text-align: right; }
+.ayuda { display: block; font-size: 12px; color: var(--sg-gris); }
+
+.selector { margin: 8px 0 4px; }
+
+.seccion .sg-chip { margin-left: auto; }
+
+/* ---------- Aviso de cotización por revisar ---------- */
+.pendiente {
+  display: flex; align-items: center; gap: 16px; margin: 12px 0 4px; padding: 16px 20px;
+  border: 1px solid var(--sg-amarillo); border-radius: 8px; background: rgba(250, 200, 43, 0.12);
+}
+.pendiente app-icono { flex-shrink: 0; }
+.pendiente div { display: flex; flex-direction: column; gap: 2px; }
+.pendiente small { font-size: 13px; color: var(--sg-gris); }
+
+/* ---------- 03 · Fotos del avance ---------- */
+.fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.foto {
+  position: relative; display: block; aspect-ratio: 4 / 3; overflow: hidden; padding: 0;
+  border: 1px solid var(--sg-fuerte); border-radius: 8px; background: rgba(22, 22, 22, 0.04);
+  cursor: pointer; text-align: left; font: inherit; color: inherit;
+}
+.foto img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+.foto:hover img { transform: scale(1.04); }
+.foto__tipo {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  height: 100%; font-size: 13px; font-weight: 600;
+}
+.foto__pie {
+  position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; gap: 2px;
+  padding: 24px 12px 10px; color: var(--sg-blanco);
+  background: linear-gradient(transparent, rgba(22, 22, 22, 0.75));
+}
+.foto__pie strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.foto__pie small { font-size: 11px; opacity: 0.85; }
+
+.vacio--suelto {
+  display: flex; align-items: center; gap: 14px; padding: 24px;
+  border: 1px dashed var(--sg-fuerte); border-radius: 8px; color: var(--sg-gris);
+}
+.vacio--suelto p { margin: 0; }
+
+.paneles--abajo { margin-top: 12px; }
+
+/* ---------- 04 · Pagos ---------- */
+.cobro { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; }
+.cobro__cifras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.cobro__cifras strong { display: block; margin-top: 4px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+
+.tabla-pagos { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tabla-pagos th {
+  padding: 0 8px 8px; border-bottom: 1px solid var(--sg-fuerte); text-align: left;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sg-gris);
+}
+.tabla-pagos td { padding: 10px 8px; border-bottom: 1px solid var(--sg-suave); vertical-align: middle; }
+.tabla-pagos td:first-child, .tabla-pagos th:first-child { padding-left: 0; }
+.tabla-pagos .fecha { font-size: 13px; font-weight: 600; color: var(--sg-gris); white-space: nowrap; }
+.tabla-pagos .fecha.alerta-texto { color: var(--sg-rojo); }
+.tabla-pagos .importe { font-weight: 700; white-space: nowrap; }
+
+/* ---------- 05 · Tu arquitecto ---------- */
+.contacto { display: flex; align-items: center; gap: 14px; }
+.contacto div { display: flex; flex-direction: column; }
+.contacto strong { font-size: 18px; }
+.contacto small { font-size: 13px; color: var(--sg-gris); }
+.contacto__avatar {
+  display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%;
+  background: var(--sg-amarillo); font-size: 20px; font-weight: 800;
+}
+.contacto__acciones { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+.contacto__acciones a { text-decoration: none; }
+
+.datos {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; margin: 0; padding-top: 16px;
+  border-top: 1px solid var(--sg-fuerte);
+}
+.datos .completo { grid-column: 1 / -1; }
+.datos dd { margin: 4px 0 0; font-weight: 600; }
+
+/* ---------- Visor de fotos y videos ---------- */
+.visor {
+  position: fixed; inset: 0; z-index: 2000; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 24px;
+  background: rgba(10, 10, 10, 0.9); animation: sg-aparecer 0.2s ease;
+}
+.visor__cerrar { position: absolute; top: 24px; right: 24px; color: var(--sg-blanco); background: rgba(255, 255, 255, 0.1); border-radius: 50%; }
+.visor img, .visor video, .visor iframe {
+  max-width: 100%; max-height: 82vh; object-fit: contain; background: var(--sg-blanco);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.visor iframe { width: min(900px, 100%); height: 82vh; }
+.visor__info { margin-top: 16px; color: var(--sg-blanco); font-size: 14px; text-align: center; }
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 640px) {
+  .fotos { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .foto__pie small { display: none; }
+  .cobro__cifras { grid-template-columns: 1fr 1fr; }
+  .cobro__cifras > div:first-child { grid-column: 1 / -1; }
+  .tabla-pagos thead { display: none; }
+  .tabla-pagos tr { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; padding: 10px 0; border-bottom: 1px solid var(--sg-suave); }
+  .tabla-pagos td { padding: 0; border: 0; }
+  .tabla-pagos td:nth-child(1) { grid-column: 1; grid-row: 1; }
+  .tabla-pagos td:nth-child(2) { grid-column: 1; grid-row: 2; }
+  .tabla-pagos td:nth-child(3) { grid-column: 2; grid-row: 1; }
+  .tabla-pagos td:nth-child(4) { grid-column: 2; grid-row: 2; }
+}

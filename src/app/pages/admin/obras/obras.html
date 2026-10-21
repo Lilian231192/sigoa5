@@ -1,0 +1,369 @@
+<section class="sg-pagina">
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="sg-cabecera">
+    <div>
+      <p class="sg-label"><span class="sg-punto"></span>{{ dosDigitos(delProyecto().length) }} obras registradas</p>
+      <h1>Obras</h1>
+      <p class="sg-cabecera__sub">Avance, fechas y evidencias de cada obra en construcción.</p>
+    </div>
+
+    <div class="sg-cabecera__acciones">
+      <label class="sg-buscador">
+        <app-icono nombre="buscar" />
+        <input class="sg-input" type="search" placeholder="Buscar obra, proyecto o código"
+               [ngModel]="busqueda()" (ngModelChange)="buscar($event)" aria-label="Buscar obras">
+      </label>
+      <button type="button" class="sg-btn" (click)="nuevaObra()" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="mas" /> Nueva obra
+      </button>
+    </div>
+  </header>
+
+  <!-- Filtro activo por proyecto -->
+  @if (idProyectoFiltro()) {
+    <div class="filtro-proyecto">
+      <span class="sg-label">Proyecto</span>
+      <strong>{{ codigoProyecto(idProyectoFiltro()) }} · {{ nombreProyectoFiltro() || 'Seleccionado' }}</strong>
+      <button type="button" class="sg-icono-btn" (click)="quitarFiltroProyecto()" aria-label="Ver todas las obras">
+        <app-icono nombre="cerrar" />
+      </button>
+    </div>
+  }
+
+  @if (desdeCopia() && !cargando()) {
+    <p class="sg-aviso-copia">
+      <app-icono nombre="wifi-off" />
+      Sin conexión · Mostrando datos guardados el {{ momentoCopia() }}. Crear, editar y subir evidencias se habilitan al volver la conexión.
+    </p>
+  }
+
+  @if (error()) {
+    <div class="sg-alerta error">
+      {{ error() }}
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="recargar()">Reintentar</button>
+    </div>
+  }
+
+  <!-- ============ FILTRO POR ESTADO ============ -->
+  <nav class="sg-tabs" aria-label="Filtrar por estado">
+    @for (estado of filtros; track estado) {
+      <button type="button" [class.activo]="filtroEstado() === estado" (click)="filtrar(estado)">
+        {{ estadoTexto(estado) }} <small>{{ conteos()[estado] ?? 0 }}</small>
+      </button>
+    }
+  </nav>
+
+  <!-- ============ LISTA ============ -->
+  <div [class.cargando]="cargando()">
+    @if (paginaActual().length) {
+      <table class="sg-tabla">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Obra</th>
+            <th class="col-ocultable">Proyecto</th>
+            <th class="col-ocultable">Cliente</th>
+            <th>Avance</th>
+            <th>Estado</th>
+            <th class="col-ocultable">Entrega</th>
+            <th><span class="sg-sr">Acciones</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (o of paginaActual(); track o.id) {
+            <tr (click)="verObra(o)">
+              <td class="sg-codigo">{{ codigo(o.id) }}</td>
+              <td>
+                <strong class="nombre">{{ o.nombre }}</strong>
+                <small class="sub-movil">{{ o.proyecto }}</small>
+              </td>
+              <td class="col-ocultable">{{ o.proyecto }}</td>
+              <td class="col-ocultable">{{ o.cliente }}</td>
+              <td>
+                <div class="avance">
+                  <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="o.porcentaje_avance"></span></div>
+                  <span class="avance__numero">{{ o.porcentaje_avance }}%</span>
+                </div>
+              </td>
+              <td><span class="sg-chip" [class]="claseEstado(o.estado)">{{ estadoTexto(o.estado) }}</span></td>
+              <td class="col-ocultable fecha">{{ fecha(o.fecha_fin_estimada) }}</td>
+              <td class="acciones" (click)="$event.stopPropagation()">
+                <div class="sg-menu">
+                  <button type="button" class="sg-icono-btn" (click)="alternarMenu(o.id, $event)" aria-label="Más acciones">
+                    <app-icono nombre="opciones" />
+                  </button>
+                  @if (menuAbierto() === o.id) {
+                    <div class="sg-menu__velo" (click)="menuAbierto.set(null)"></div>
+                    <div class="sg-menu__lista">
+                      <button type="button" (click)="verObra(o)"><app-icono nombre="ver" /> Ver ficha y evidencias</button>
+                      <button type="button" (click)="editarObra(o)" [disabled]="!conexion.enLinea()"><app-icono nombre="editar" /> Editar</button>
+                      <hr>
+                      <button type="button" class="sg-menu__peligro" (click)="eliminarObra(o)" [disabled]="!conexion.enLinea()">
+                        <app-icono nombre="borrar" /> Eliminar
+                      </button>
+                    </div>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+
+      @if (totalPaginas() > 1) {
+        <div class="sg-paginacion">
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(-1)" [disabled]="pagina() === 1" aria-label="Página anterior">
+            <app-icono nombre="anterior" />
+          </button>
+          <span>{{ dosDigitos(pagina()) }} / {{ dosDigitos(totalPaginas()) }}</span>
+          <button type="button" class="sg-icono-btn" (click)="cambiarPagina(1)" [disabled]="pagina() === totalPaginas()" aria-label="Página siguiente">
+            <app-icono nombre="siguiente" />
+          </button>
+        </div>
+      }
+    } @else if (!cargando()) {
+      <div class="sg-vacio">
+        <app-icono nombre="obras" />
+        @if (busqueda() || filtroEstado() !== 'Todos') {
+          <p>No hay obras que coincidan con la búsqueda o el filtro.</p>
+        } @else {
+          <p>Aún no hay obras registradas{{ idProyectoFiltro() ? ' en este proyecto' : '' }}.</p>
+          @if (conexion.enLinea()) {
+            <button type="button" class="enlace" (click)="nuevaObra()">Registrar la primera obra</button>
+          }
+        }
+      </div>
+    }
+  </div>
+</section>
+
+<!-- ================================================================== -->
+<!-- MODAL CENTRAL: FICHA DE LA OBRA + EVIDENCIAS                       -->
+<!-- ================================================================== -->
+@if (seleccionada(); as o) {
+  <div class="sg-velo" (click)="cerrarFicha()"></div>
+
+  <div class="sg-modal sg-modal--centro" role="dialog" aria-label="Ficha de la obra">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">{{ codigoProyecto(o.id_proyecto) }} / {{ codigo(o.id) }}</span>
+        <h2>{{ o.nombre }}</h2>
+        <span class="sg-chip" [class]="claseEstado(o.estado)">{{ estadoTexto(o.estado) }}</span>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="cerrarFicha()" aria-label="Cerrar ficha"><app-icono nombre="cerrar" /></button>
+    </header>
+
+    <div class="sg-modal__cuerpo">
+      
+      <!-- COLUMNA IZQUIERDA: Datos -->
+      <div class="ficha-col-izq">
+        <div class="ficha-avance">
+          <strong>{{ o.porcentaje_avance }}%</strong>
+          <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="o.porcentaje_avance"></span></div>
+          <span class="sg-label">Avance de la obra</span>
+        </div>
+
+        <dl class="ficha-datos">
+          <div class="completo"><dt class="sg-label">Proyecto</dt><dd>{{ o.proyecto }}</dd></div>
+          <div class="completo"><dt class="sg-label">Cliente</dt><dd>{{ o.cliente || '—' }}</dd></div>
+          <div><dt class="sg-label">Inicio</dt><dd>{{ fecha(o.fecha_inicio) }}</dd></div>
+          <div><dt class="sg-label">Entrega estimada</dt><dd>{{ fecha(o.fecha_fin_estimada) }}</dd></div>
+          @if (o.fecha_fin_real) {
+            <div><dt class="sg-label">Terminó</dt><dd>{{ fecha(o.fecha_fin_real) }}</dd></div>
+          }
+          @if (o.descripcion) {
+            <div class="completo"><dt class="sg-label">Descripción</dt><dd>{{ o.descripcion }}</dd></div>
+          }
+        </dl>
+      </div>
+
+      <!-- COLUMNA DERECHA: Evidencias -->
+      <div class="ficha-col-der">
+        <div class="ficha-titulo">
+          <h3>Evidencias <small>{{ evidencias().length }}</small></h3>
+        </div>
+
+        @if (!conexion.enLinea()) {
+          <p class="sg-vacio">Las evidencias se consultan y suben con conexión a internet.</p>
+        } @else {
+          <!-- Subir evidencia -->
+          <div class="subida">
+            @if (archivo(); as a) {
+              <div class="subida__archivo">
+                <app-icono [nombre]="a.type.startsWith('image/') ? 'fotos' : 'archivo'" />
+                <div><strong>{{ a.name }}</strong><small>{{ pesoArchivo(a) }}</small></div>
+                <button type="button" class="sg-icono-btn" (click)="limpiarEvidencia()" aria-label="Quitar archivo"><app-icono nombre="cerrar" /></button>
+              </div>
+              <div class="sg-form">
+                <div class="sg-campo">
+                  <label class="sg-label" for="e-tipo">Tipo</label>
+                  <select id="e-tipo" class="sg-select" [(ngModel)]="tipoEvidencia">
+                    @for (t of tiposEvidencia; track t) {
+                      <option [value]="t">{{ t === 'Fotografia' ? 'Fotografía' : t }}</option>
+                    }
+                  </select>
+                </div>
+                <div class="sg-campo">
+                  <label class="sg-label" for="e-desc">Descripción</label>
+                  <input id="e-desc" class="sg-input" [(ngModel)]="descripcionEvidencia" placeholder="Ej. Colado de losa">
+                </div>
+              </div>
+              <button type="button" class="sg-btn sg-btn--chico sg-btn--bloque" (click)="subirEvidencia()" [disabled]="subiendo()">
+                <app-icono nombre="subir" /> {{ subiendo() ? 'Subiendo…' : 'Subir evidencia' }}
+              </button>
+            } @else {
+              <label class="subida__zona">
+                <input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,application/pdf" capture="environment"
+                       (change)="elegirArchivo($event)">
+                <app-icono nombre="subir" />
+                <strong>Subir foto, video o PDF</strong>
+                <small>JPG, PNG, WEBP, MP4 o PDF · máximo 10 MB</small>
+              </label>
+            }
+          </div>
+
+          <!-- Galería -->
+          @if (cargandoEvidencias()) {
+            <p class="gris">Cargando evidencias…</p>
+          } @else if (evidencias().length) {
+            <div class="galeria">
+              @for (e of evidencias(); track e.id) {
+                <figure class="evidencia">
+                  <div class="evidencia__vista" (click)="abrirVisor(e)">
+                    @if (esImagen(e)) {
+                      <img [src]="urlArchivo(e.archivo)" [alt]="e.descripcion || o.nombre" loading="lazy">
+                    } @else {
+                      <span class="evidencia__tipo"><app-icono nombre="archivo" /> {{ e.tipo }}</span>
+                    }
+                  </div>
+                  <figcaption>
+                    <span class="sg-label">{{ fecha(e.fecha) }}</span>
+                    @if (e.descripcion) { <span class="evidencia__desc">{{ e.descripcion }}</span> }
+                    <small>{{ e.usuario }}</small>
+                  </figcaption>
+                  <button type="button" class="sg-icono-btn evidencia__borrar" (click)="eliminarEvidencia(e)" aria-label="Eliminar evidencia">
+                    <app-icono nombre="borrar" />
+                  </button>
+                </figure>
+              }
+            </div>
+          } @else {
+            <p class="sg-vacio">Esta obra todavía no tiene evidencias.</p>
+          }
+        }
+      </div>
+
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico peligro-texto"
+              (click)="eliminarObra(o)" [disabled]="!conexion.enLinea()">Eliminar</button>
+      <button type="button" class="sg-btn sg-btn--chico" (click)="editarObra(o)" [disabled]="!conexion.enLinea()">
+        <app-icono nombre="editar" /> Editar obra
+      </button>
+    </footer>
+  </div>
+}
+
+<!-- ================================================================== -->
+<!-- VISOR DE EVIDENCIA (Lightbox)                                      -->
+<!-- ================================================================== -->
+@if (evidenciaVisor(); as e) {
+  <div class="visor" (click)="cerrarVisor()">
+    <button type="button" class="sg-icono-btn visor__cerrar" (click)="cerrarVisor()" aria-label="Cerrar visor">
+      <app-icono nombre="cerrar" />
+    </button>
+    
+    <!-- Solo el fondo oscuro cierra el visor; clic sobre el archivo no lo cierra -->
+    @if (esImagen(e)) {
+      <img [src]="urlArchivo(e.archivo)" [alt]="e.descripcion || 'Evidencia'" (click)="$event.stopPropagation()">
+    } @else if (esVideo(e)) {
+      <video [src]="urlArchivo(e.archivo)" controls autoplay (click)="$event.stopPropagation()"></video>
+    } @else {
+      <iframe [src]="urlArchivo(e.archivo) | safeUrl" title="Visor de archivo" (click)="$event.stopPropagation()"></iframe>
+    }
+    
+    <div class="visor__info">
+      <strong>{{ e.descripcion || 'Evidencia de obra' }}</strong> · {{ fecha(e.fecha) }}
+    </div>
+  </div>
+}
+
+<!-- ================================================================== -->
+<!-- FORMULARIO DE OBRA (crear / editar)                                -->
+<!-- ================================================================== -->
+@if (formObra(); as form) {
+  <div class="sg-velo sg-velo--alto" (click)="formObra.set(null)"></div>
+  <form class="sg-modal sg-modal--alto" (ngSubmit)="guardarObra()">
+    <header class="sg-modal__cabecera">
+      <div>
+        <span class="sg-label">{{ form.id ? codigo(form.id) : 'Nuevo registro' }}</span>
+        <h2>{{ form.id ? 'Editar obra' : 'Nueva obra' }}</h2>
+      </div>
+      <button type="button" class="sg-icono-btn" (click)="formObra.set(null)" aria-label="Cerrar"><app-icono nombre="cerrar" /></button>
+    </header>
+
+    <div class="sg-modal__cuerpo sg-form">
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="o-proyecto">Proyecto *</label>
+        <select id="o-proyecto" class="sg-select" name="id_proyecto" [(ngModel)]="form.id_proyecto" required>
+          <option [ngValue]="null" disabled>Selecciona un proyecto</option>
+          @for (p of proyectos(); track p.id) {
+            <option [ngValue]="p.id">{{ codigoProyecto(p.id) }} · {{ p.nombre }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="o-nombre">Nombre de la obra *</label>
+        <input id="o-nombre" class="sg-input" name="nombre" [(ngModel)]="form.nombre" required placeholder="Ej. Casa principal, Barda perimetral">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="o-estado">Estado</label>
+        <select id="o-estado" class="sg-select" name="estado" [ngModel]="form.estado" (ngModelChange)="cambiarEstado(form, $event)">
+          @for (e of estadosObra; track e) {
+            <option [value]="e">{{ estadoTexto(e) }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="o-avance">Avance: {{ form.porcentaje_avance }}%</label>
+        <input id="o-avance" class="rango" type="range" min="0" max="100" step="5" name="porcentaje_avance"
+               [(ngModel)]="form.porcentaje_avance" [disabled]="form.estado === 'Pendiente' || form.estado === 'Finalizada'">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="o-inicio">Fecha de inicio{{ form.estado === 'Pendiente' || form.estado === 'Cancelada' ? '' : ' *' }}</label>
+        <input id="o-inicio" class="sg-input" type="date" name="fecha_inicio" [(ngModel)]="form.fecha_inicio">
+      </div>
+
+      <div class="sg-campo">
+        <label class="sg-label" for="o-fin">Entrega estimada</label>
+        <input id="o-fin" class="sg-input" type="date" name="fecha_fin_estimada" [(ngModel)]="form.fecha_fin_estimada">
+      </div>
+
+      @if (form.estado === 'Finalizada') {
+        <div class="sg-campo">
+          <label class="sg-label" for="o-real">Fecha real de término *</label>
+          <input id="o-real" class="sg-input" type="date" name="fecha_fin_real" [(ngModel)]="form.fecha_fin_real">
+        </div>
+      }
+
+      <div class="sg-campo sg-campo--completo">
+        <label class="sg-label" for="o-descripcion">Descripción</label>
+        <textarea id="o-descripcion" class="sg-textarea" name="descripcion" [(ngModel)]="form.descripcion"
+                  placeholder="Alcance de la obra, notas importantes"></textarea>
+      </div>
+    </div>
+
+    <footer class="sg-modal__pie">
+      <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="formObra.set(null)">Cancelar</button>
+      <button type="submit" class="sg-btn sg-btn--chico" [disabled]="guardando()">
+        {{ guardando() ? 'Guardando…' : (form.id ? 'Guardar cambios' : 'Crear obra') }}
+      </button>
+    </footer>
+  </form>
+}

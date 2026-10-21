@@ -1,0 +1,465 @@
+/* ===== Inicio · Administrador ===== */
+.inicio {
+  --fuerte: rgba(22, 22, 22, 0.45);
+  --suave: rgba(22, 22, 22, 0.1);
+  max-width: 1440px; 
+  margin: 0 auto; 
+  padding: 36px var(--sg-margen) 56px;
+}
+
+/* ---------- Encabezado ---------- */
+.cabecera {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: flex-end; 
+  gap: 24px; 
+  flex-wrap: wrap;
+  padding-bottom: 28px; 
+  border-bottom: 1px solid var(--fuerte);
+}
+
+.cabecera h1 { 
+  margin: 10px 0 6px; 
+  font-size: clamp(32px, 4.4vw, 56px); 
+  font-weight: 800; 
+  letter-spacing: -0.035em; 
+  line-height: 1.02; 
+}
+
+/* Nombre en negro sólido (sin subrayado) */
+.resaltado { 
+  color: var(--sg-negro); 
+}
+
+.cabecera__sub { 
+  margin: 0; 
+  font-size: 16px; 
+  color: var(--sg-gris); 
+}
+
+.punto { 
+  display: inline-block; 
+  width: 8px; 
+  height: 8px; 
+  margin-right: 10px; 
+  background: var(--sg-amarillo); 
+}
+
+/* Cajetín de planos sin el recuadro amarillo */
+.rotulo { 
+  display: flex; 
+  margin: 0; 
+  border: 1px solid var(--fuerte); 
+  background: var(--sg-papel); 
+}
+.rotulo > div { 
+  padding: 10px 18px; 
+  border-right: 1px solid var(--fuerte); 
+}
+.rotulo > div:last-child { 
+  border-right: none; 
+}
+.rotulo dt { 
+  font-size: 10px; 
+}
+.rotulo dd { 
+  margin: 3px 0 0; 
+  font-weight: 700; 
+  font-size: 15px; 
+}
+
+/* ---------- Avisos ---------- */
+.aviso, .nota {
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  margin: 20px 0 0; 
+  padding: 12px 16px;
+  border-left: 3px solid var(--sg-amarillo); 
+  background: rgba(250, 200, 43, 0.1); 
+  font-weight: 500;
+}
+.error { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 16px; 
+  margin-top: 20px; 
+}
+.error .sg-btn { 
+  height: 38px; 
+}
+
+/* ---------- Títulos de sección numerados ---------- */
+.seccion {
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  margin: 40px 0 18px;
+  font-size: 15px; 
+  font-weight: 700; 
+  letter-spacing: 0.08em; 
+  text-transform: uppercase;
+}
+
+/* Números de sección (01, 02...) sin fondo negro */
+.seccion span {
+  display: inline-grid; 
+  place-items: center; 
+  width: auto;
+  height: auto;
+  background: transparent; 
+  color: var(--sg-negro); 
+  font-size: 15px; 
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.seccion::after { 
+  content: ''; 
+  flex: 1; 
+  height: 1px; 
+  background: var(--suave); 
+}
+
+/* ---------- Tarjetas de indicadores ---------- */
+.indicadores { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 20px; 
+}
+
+.tarjeta {
+  position: relative; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+  padding: 22px;
+  background: transparent; 
+  border: 1px solid var(--fuerte);
+  color: inherit; 
+  text-decoration: none; 
+  transition: border-color var(--sg-transicion);
+}
+
+.tarjeta:hover { 
+  border-color: var(--sg-negro); 
+}
+
+.tarjeta__cabeza { 
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+}
+
+/* Iconos sin fondo, solo trazo negro */
+.tarjeta__icono { 
+  color: var(--sg-negro); 
+  background: transparent;
+}
+
+.tarjeta__numero { 
+  font-size: clamp(38px, 3.6vw, 54px); 
+  font-weight: 800; 
+  letter-spacing: -0.04em; 
+  line-height: 1; 
+}
+
+.tarjeta small { 
+  font-size: 13px; 
+  color: var(--sg-gris); 
+}
+
+/* La tarjeta de pagos ya no es oscura */
+.tarjeta--oscura { 
+  background: transparent; 
+  border-color: var(--fuerte); 
+  color: inherit; 
+}
+.tarjeta--oscura .tarjeta__numero { 
+  color: var(--sg-negro); 
+}
+
+.tarjeta__ir { 
+  display: flex; 
+  align-items: center; 
+  gap: 8px; 
+  margin-top: auto; 
+  font-size: 13px; 
+  font-weight: 700; 
+  text-transform: uppercase; 
+  letter-spacing: 0.06em; 
+}
+
+/* ---------- Paneles ---------- */
+.paneles { 
+  display: grid; 
+  grid-template-columns: 1.7fr 1fr; 
+  gap: 0 48px; 
+}
+.panel { 
+  min-width: 0; 
+}
+
+.avance { 
+  display: grid; 
+  grid-template-columns: 220px 1fr; 
+  gap: 32px; 
+  align-items: start; 
+}
+
+/* Medidor circular */
+.medidor { 
+  position: relative; 
+  aspect-ratio: 1; 
+}
+.medidor svg { 
+  width: 100%; 
+  height: 100%; 
+}
+.medidor line { 
+  stroke: var(--sg-negro); 
+  stroke-width: 1; 
+}
+.medidor circle { 
+  fill: none; 
+  stroke-width: 14; 
+}
+.medidor__base { 
+  stroke: var(--suave); 
+}
+.medidor__arco { 
+  stroke: var(--sg-amarillo); 
+  transform: rotate(-90deg); 
+  transform-origin: center; 
+  transition: stroke-dasharray 0.8s ease; 
+}
+.medidor__valor { 
+  position: absolute; 
+  inset: 0; 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+}
+.medidor__valor strong { 
+  font-size: 48px; 
+  font-weight: 800; 
+  letter-spacing: -0.04em; 
+  line-height: 1; 
+}
+.medidor__valor small { 
+  font-size: 22px; 
+}
+
+/* Filas de obras */
+.obra { 
+  display: grid; 
+  grid-template-columns: 1fr auto; 
+  gap: 8px 16px; 
+  padding: 14px 0; 
+  border-bottom: 1px solid var(--suave); 
+}
+.obra:first-child { 
+  padding-top: 0; 
+}
+.obra__datos { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 2px; 
+  min-width: 0; 
+}
+.obra__datos strong, .evento__datos strong { 
+  font-size: 17px; 
+  font-weight: 700; 
+}
+.obra__datos small, .evento__datos small { 
+  font-size: 13px; 
+  color: var(--sg-gris); 
+}
+.obra__porcentaje { 
+  font-size: 24px; 
+  font-weight: 800; 
+  letter-spacing: -0.02em; 
+}
+.obra__barra { 
+  grid-column: 1 / -1; 
+}
+
+/* Línea de tiempo de fechas */
+.linea-tiempo { 
+  position: relative; 
+  margin: 0; 
+  padding: 0; 
+  list-style: none; 
+}
+.linea-tiempo::before { 
+  content: ''; 
+  position: absolute; 
+  left: 31px; 
+  top: 10px; 
+  bottom: 10px; 
+  width: 1px; 
+  background: var(--fuerte); 
+}
+.linea-tiempo:has(.vacio)::before { 
+  display: none; 
+}
+.evento { 
+  position: relative; 
+  display: flex; 
+  gap: 18px; 
+  padding-bottom: 18px; 
+}
+.evento__fecha {
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center; 
+  flex-shrink: 0;
+  width: 64px; 
+  height: 64px; 
+  background: var(--sg-papel); 
+  border: 1px solid var(--sg-negro);
+}
+.evento:first-child .evento__fecha { 
+  background: var(--sg-amarillo); 
+}
+.evento__fecha strong { 
+  font-size: 24px; 
+  font-weight: 800; 
+  line-height: 1; 
+}
+.evento__fecha span { 
+  font-size: 11px; 
+  font-weight: 700; 
+  letter-spacing: 0.08em; 
+}
+.evento__datos { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 2px; 
+  padding-top: 4px; 
+  min-width: 0; 
+}
+
+/* Estados vacíos */
+.vacio { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: flex-start; 
+  gap: 8px; 
+  padding: 22px; 
+  border: 1px dashed var(--fuerte); 
+  color: var(--sg-gris); 
+}
+.vacio p { 
+  margin: 0; 
+}
+.vacio a { 
+  color: var(--sg-negro); 
+  font-weight: 700; 
+}
+
+.enlace { 
+  display: inline-flex; 
+  align-items: center; 
+  gap: 8px; 
+  margin-top: 18px; 
+  font-weight: 700; 
+  color: var(--sg-negro); 
+  text-decoration: none; 
+}
+.enlace:hover { 
+  text-decoration: underline; 
+  text-underline-offset: 4px; 
+}
+
+/* ---------- Accesos rápidos ---------- */
+.accesos { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 20px; 
+}
+.acceso {
+  display: flex; 
+  align-items: center; 
+  gap: 14px; 
+  padding: 18px;
+  border: 1px solid var(--fuerte); 
+  background: transparent;
+  color: var(--sg-negro); 
+  text-decoration: none; 
+  transition: background var(--sg-transicion);
+}
+.acceso div { 
+  display: flex; 
+  flex-direction: column; 
+  flex: 1; 
+  min-width: 0; 
+}
+.acceso strong { 
+  font-size: 15px; 
+}
+.acceso small { 
+  font-size: 12px; 
+  color: var(--sg-gris); 
+}
+.acceso:hover { 
+  background: rgba(250, 200, 43, 0.1); 
+}
+.bloqueado { 
+  opacity: 0.4; 
+  pointer-events: none; 
+}
+
+.cargando { 
+  opacity: 0.45; 
+}
+
+/* ---------- Responsivo ---------- */
+@media (max-width: 1180px) {
+  .indicadores, .accesos { 
+    grid-template-columns: repeat(2, 1fr); 
+  }
+  .paneles { 
+    grid-template-columns: 1fr; 
+  }
+}
+
+@media (max-width: 640px) {
+  .inicio { 
+    padding-top: 24px; 
+  }
+  .rotulo { 
+    display: none; 
+  }
+  .indicadores { 
+    gap: 12px; 
+  }
+  .tarjeta { 
+    padding: 16px; 
+  }
+  .tarjeta__cabeza { 
+    flex-direction: column; 
+    align-items: flex-start; 
+    gap: 10px; 
+  }
+  .tarjeta small { 
+    display: none; 
+  }
+  .avance { 
+    grid-template-columns: 1fr; 
+  }
+  .medidor { 
+    width: 180px; 
+    margin: 0 auto; 
+  }
+  .accesos { 
+    grid-template-columns: 1fr; 
+    gap: 10px; 
+  }
+}
+.inicio {
+  background-color: #ffffff9b; /* Tapa un poco la cuadrícula */
+}

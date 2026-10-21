@@ -1,0 +1,225 @@
+<div class="shell">
+
+  <!-- ============ BARRA SUPERIOR (fija) ============ -->
+  <header class="barra">
+    <a class="barra__logo" [routerLink]="config().menu[0].ruta">
+      <img src="img/sigoa-logo.png" alt="SIGOA" width="150" height="39">
+    </a>
+
+    <!-- Menú de texto: solo en computadora -->
+    <nav class="barra__menu" aria-label="Menú principal">
+      @for (item of config().menu; track item.ruta) {
+        <a [routerLink]="item.ruta" routerLinkActive="activo"
+           [routerLinkActiveOptions]="{ exact: item.exacto ?? false }">
+          {{ item.texto }}
+        </a>
+      }
+    </nav>
+
+    <div class="barra__acciones">
+      <!-- Indicador de conexión: wifi verde = con internet · wifi tachado gris = sin internet -->
+      <span class="estado" [class.estado--sin-conexion]="!conexion.enLinea()" role="status"
+            [attr.title]="conexion.enLinea() ? 'En línea' : 'Sin conexión'"
+            [attr.aria-label]="conexion.enLinea() ? 'En línea' : 'Sin conexión'">
+        <app-icono [nombre]="conexion.enLinea() ? 'wifi' : 'wifi-off'" />
+      </span>
+
+      <!-- ============ CAMPANITA: historial de notificaciones ============ -->
+      <div class="notis" #campana>
+        <button type="button" class="icono-btn" [class.icono-btn--abierto]="notisAbierto()" (click)="alternarNotis()"
+                [attr.aria-label]="notis.noLeidas() ? 'Notificaciones, ' + notis.noLeidas() + ' sin leer' : 'Notificaciones'"
+                aria-haspopup="dialog" [attr.aria-expanded]="notisAbierto()">
+          <app-icono nombre="campana" />
+          @if (notis.noLeidas()) {
+            <span class="icono-btn__contador">{{ notis.noLeidas() > 9 ? '9+' : notis.noLeidas() }}</span>
+          } @else if (notis.permiso() === 'pendiente') {
+            <!-- Punto amarillo: todavía no activa las notificaciones -->
+            <span class="icono-btn__punto"></span>
+          }
+        </button>
+
+        <div class="notis__panel" [class.notis__panel--abierto]="notisAbierto()" [inert]="!notisAbierto()"
+             role="dialog" aria-label="Notificaciones">
+                    <header class="notis__cabecera">
+            <div>
+              <strong>Notificaciones</strong>
+              @if (notis.noLeidas()) { <small>{{ notis.noLeidas() }} sin leer</small> }
+            </div>
+            @if (notis.lista().length) {
+              <div class="notis__acciones">
+                @if (notis.noLeidas()) {
+                  <button type="button" class="notis__enlace" (click)="notis.marcarTodas()">Marcar todas como leídas</button>
+                }
+                <button type="button" class="notis__enlace notis__enlace--peligro" (click)="eliminarTodas()">Eliminar todas</button>
+              </div>
+            }
+          </header>
+
+          @switch (notis.permiso()) {
+            @case ('pendiente') {
+              <div class="notis__activar">
+                <span class="notis__activar-icono"><app-icono nombre="campana" /></span>
+                <div>
+                  <strong>Activa las notificaciones</strong>
+                  <p>{{ textoActivar() }}</p>
+                  <button type="button" class="sg-btn sg-btn--chico" (click)="notis.activar()" [disabled]="notis.activando()">
+                    {{ notis.activando() ? 'Activando…' : 'Activar' }}
+                  </button>
+                </div>
+              </div>
+            }
+            @case ('bloqueadas') {
+              <p class="notis__nota">
+                Las notificaciones están bloqueadas en este navegador. Para recibirlas, toca el candado junto a la
+                dirección de la página → <strong>Notificaciones</strong> → <strong>Permitir</strong>.
+              </p>
+            }
+            @case ('no-soportado') {
+              <p class="notis__nota">
+                Este navegador no puede mostrar notificaciones. En iPhone, primero instala SIGOA en tu pantalla de inicio.
+              </p>
+            }
+          }
+
+                   <ul class="notis__lista">
+            @for (n of notis.lista(); track n.id) {
+              <li class="noti-fila" [class.noti-fila--saliendo]="borrando() === n.id">
+                <button type="button" class="noti" [class.noti--nueva]="!n.leida" (click)="abrirNotificacion(n)">
+                  <span class="noti__icono noti__icono--{{ colorDe(n.tipo) }}"><app-icono [nombre]="iconoDe(n.tipo)" /></span>
+                  <span class="noti__texto">
+                    <strong>{{ n.titulo }}</strong>
+                    <span>{{ n.mensaje }}</span>
+                    <small>{{ hace(n.fecha) }}</small>
+                  </span>
+                  @if (!n.leida) { <span class="noti__punto" aria-label="Sin leer"></span> }
+                </button>
+                <button type="button" class="noti__borrar" (click)="eliminarNotificacion(n, $event)"
+                        aria-label="Eliminar notificación" title="Eliminar">
+                  <app-icono nombre="borrar" />
+                </button>
+              </li>
+            } @empty {
+              <li class="notis__vacio">
+                <app-icono nombre="campana" />
+                <p>No tienes notificaciones por ahora.<br>Aquí aparecerá todo lo importante.</p>
+              </li>
+            }
+          </ul>
+          
+        </div>
+      </div>
+
+      <div class="perfil" #perfil>
+        <button type="button" class="avatar" [class.avatar--abierto]="perfilAbierto()"
+                (click)="alternarPerfil()"
+                aria-label="Menú de perfil" aria-haspopup="menu" [attr.aria-expanded]="perfilAbierto()">
+          {{ inicial() }}
+        </button>
+
+        <!-- Siempre existe, pero oculto: así puede animarse al abrir y al cerrar -->
+        <div class="perfil__menu" [class.perfil__menu--abierto]="perfilAbierto()" [inert]="!perfilAbierto()" role="menu">
+          <div class="perfil__datos">
+            <strong>{{ usuario()?.nombre }} {{ usuario()?.apellidos }}</strong>
+            <span class="perfil__correo">{{ usuario()?.correo }}</span>
+            <span class="sg-label">{{ config().etiqueta }}</span>
+          </div>
+          @if (pwa.puedeInstalar()) {
+            <button type="button" class="perfil__opcion" role="menuitem" (click)="perfilAbierto.set(false); pwa.instalar()">
+              <app-icono nombre="descargar" /> Instalar aplicación
+            </button>
+          }
+          <button type="button" class="perfil__opcion perfil__opcion--salir" role="menuitem" (click)="confirmarCerrarSesion()">
+            <app-icono nombre="salir" /> Cerrar sesión
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Aviso sin conexión: la app sigue abierta en modo consulta -->
+  @if (!conexion.enLinea()) {
+    <div class="aviso-offline" role="status">
+      <app-icono nombre="wifi-off" />
+      Sin conexión · Modo consulta
+    </div>
+  }
+
+  <!-- ============ CONTENIDO (cambia en cada pantalla) ============ -->
+  <main class="contenido">
+    <router-outlet />
+  </main>
+
+  <!-- ============ BARRA INFERIOR (celular y tablet) ============ -->
+  <!-- Con más de 5 opciones (admin), en celular solo se ven los íconos -->
+  <nav class="tabs" [class.tabs--compacta]="config().menu.length > 5" aria-label="Menú principal">
+    @for (item of config().menu; track item.ruta) {
+      <a [routerLink]="item.ruta" routerLinkActive="activo"
+         [routerLinkActiveOptions]="{ exact: item.exacto ?? false }"
+         [attr.aria-label]="item.texto" [attr.title]="item.texto">
+        <span class="tabs__icono"><app-icono [nombre]="item.icono" /></span>
+        <span class="tabs__texto">{{ item.texto }}</span>
+      </a>
+    }
+  </nav>
+
+  <!-- ============ AVISOS Y CONFIRMACIÓN (sirven a todas las pantallas) ============ -->
+  <!-- Avisos: arriba a la derecha, con color según el tipo (verde, rojo, amarillo, azul) -->
+  <div class="avisos" aria-live="polite">
+    @for (aviso of avisos.lista(); track aviso.id) {
+      <div class="aviso aviso--{{ aviso.tipo }}" [class.aviso--saliendo]="aviso.saliendo"
+           [style.--duracion]="aviso.duracion + 'ms'" [attr.role]="aviso.tipo === 'error' ? 'alert' : 'status'"
+           (mouseenter)="avisos.pausar(aviso.id)" (mouseleave)="avisos.reanudar(aviso.id)">
+        <span class="aviso__icono"><app-icono [nombre]="'aviso-' + aviso.tipo" /></span>
+        <div class="aviso__texto">
+          <strong>
+            {{ aviso.titulo }}
+            @if (aviso.veces > 1) { <span class="aviso__veces">×{{ aviso.veces }}</span> }
+          </strong>
+          <p>{{ aviso.texto }}</p>
+        </div>
+        <button type="button" class="aviso__cerrar" (click)="avisos.cerrar(aviso.id)" aria-label="Cerrar aviso">
+          <app-icono nombre="cerrar" />
+        </button>
+        <span class="aviso__tiempo" aria-hidden="true"></span>
+      </div>
+    }
+  </div>
+
+  @if (avisos.confirmacion(); as confirmacion) {
+    <div class="sg-velo sg-velo--confirmar" (click)="confirmacion.responder(false)"></div>
+    <div class="sg-modal sg-modal--chico sg-modal--confirmar" role="alertdialog" aria-modal="true">
+      <div class="sg-modal__cabecera">
+        <div><span class="sg-label">Confirmar</span><h2>{{ confirmacion.titulo }}</h2></div>
+      </div>
+      <div class="sg-modal__cuerpo"><p>{{ confirmacion.mensaje }}</p></div>
+      <div class="sg-modal__pie">
+        <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="confirmacion.responder(false)">Cancelar</button>
+        <button type="button" class="sg-btn sg-btn--chico" [class.sg-btn--peligro]="confirmacion.peligro"
+                (click)="confirmacion.responder(true)">{{ confirmacion.textoAceptar }}</button>
+      </div>
+    </div>
+  }
+
+    <!-- ============ VISTA PREVIA DE DOCUMENTOS (recibo, cotización, contrato) ============ -->
+  <!-- Se abre centrada dentro de la app, al tamaño de la pantalla -->
+  @if (documento.actual(); as doc) {
+    <div class="sg-velo sg-velo--documento" (click)="documento.cerrar()"></div>
+    <div class="documento" role="dialog" aria-modal="true" [attr.aria-label]="doc.titulo">
+      <div class="documento__cabecera">
+        <div><span class="sg-label">Vista previa</span><h2>{{ doc.titulo }}</h2></div>
+        <button type="button" class="sg-icono-btn" (click)="documento.cerrar()" aria-label="Cerrar vista previa">
+          <app-icono nombre="cerrar" />
+        </button>
+      </div>
+      <iframe #marco class="documento__marco" [srcdoc]="documentoHtml()" [title]="doc.titulo"></iframe>
+      <div class="documento__pie">
+        <small>En el diálogo de impresión elige «Guardar como PDF».</small>
+        <button type="button" class="sg-btn sg-btn--contorno sg-btn--chico" (click)="documento.cerrar()">Cerrar</button>
+        <button type="button" class="sg-btn sg-btn--chico" (click)="imprimirDocumento()">
+          <app-icono nombre="descargar" /> Imprimir / PDF
+        </button>
+      </div>
+    </div>
+  }
+
+</div>

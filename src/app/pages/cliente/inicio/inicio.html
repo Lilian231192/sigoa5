@@ -1,0 +1,254 @@
+<section class="inicio">
+
+  <!-- ============ ENCABEZADO ============ -->
+  <header class="cabecera">
+    <div class="cabecera__texto">
+      <p class="sg-label"><span class="punto"></span>{{ fechaHoy }} · Mi obra</p>
+      <h1>{{ saludo }}, <span class="resaltado">{{ nombre() || datos()?.cliente?.nombre }}</span></h1>
+      <p class="cabecera__sub">
+        @if (proyecto(); as p) { Así va <strong>{{ p.nombre }}</strong> hoy. } @else { Aquí verás el avance de tu proyecto. }
+      </p>
+    </div>
+
+    @if (proyecto(); as p) {
+      <dl class="rotulo">
+        <div><dt class="sg-label">Proyecto</dt><dd>{{ codigo(p.id) }}</dd></div>
+        <div><dt class="sg-label">Avance</dt><dd>{{ avance() }}%</dd></div>
+        <div><dt class="sg-label">Entrega</dt><dd>{{ formatoFecha(p.fecha_fin) }}</dd></div>
+      </dl>
+    }
+  </header>
+
+  @if (desdeCopia() && !cargando()) {
+    <p class="aviso">
+      <app-icono nombre="wifi-off" />
+      Sin conexión · Mostrando datos guardados el {{ momentoCopia() }}
+    </p>
+  }
+
+  @if (error()) {
+    <div class="sg-alerta error">
+      {{ error() }}
+      <button type="button" class="sg-btn sg-btn--contorno" (click)="recargar()">Reintentar</button>
+    </div>
+  }
+
+  <!-- Si el cliente tiene más de un proyecto, puede cambiar entre ellos -->
+  @if (proyectos().length > 1) {
+    <nav class="sg-tabs selector" aria-label="Mis proyectos">
+      @for (p of proyectos(); track p.id) {
+        <button type="button" [class.activo]="proyecto()?.id === p.id" (click)="elegirProyecto(p.id)">{{ p.nombre }}</button>
+      }
+    </nav>
+  }
+
+  @if (proyecto(); as p) {
+
+    <!-- Cotización enviada que el cliente aún no responde -->
+    @if (cotizacionPendiente(); as c) {
+      <div class="pendiente">
+        <app-icono nombre="cotizaciones" />
+        <div>
+          <strong>Tienes una cotización por revisar · {{ c.folio }}</strong>
+          <small>Total {{ moneda(c.total) }} · válida hasta {{ formatoFecha(c.vigencia) }}. Comunícate con tu arquitecto para aceptarla.</small>
+        </div>
+      </div>
+    }
+
+    <!-- ============ 01 · AVANCE + 02 · FECHAS ============ -->
+    <div class="paneles" [class.cargando]="cargando()">
+
+      <section class="panel">
+        <h2 class="seccion"><span>01</span> Avance de tu obra <span class="sg-chip" [class]="claseEstado(p.estado)">{{ p.estado }}</span></h2>
+
+        <div class="avance">
+          <div class="medidor">
+            <svg viewBox="0 0 200 200" aria-hidden="true">
+              @for (grado of marcas; track grado) {
+                <line x1="100" y1="6" x2="100" [attr.y2]="grado % 45 === 0 ? 18 : 12"
+                      [attr.transform]="'rotate(' + grado + ' 100 100)'" />
+              }
+              <circle class="medidor__base" cx="100" cy="100" r="72" />
+              <circle class="medidor__arco" cx="100" cy="100" r="72" pathLength="100"
+                      [attr.stroke-dasharray]="avance() + ' 100'" />
+            </svg>
+            <div class="medidor__valor">
+              <strong>{{ avance() }}<small>%</small></strong>
+              <span class="sg-label">General</span>
+            </div>
+          </div>
+
+          <div class="lista">
+            @for (o of obras(); track o.id) {
+              <div class="obra">
+                <div class="obra__datos">
+                  <span class="sg-label">{{ estadoTexto(o.estado) }}</span>
+                  <strong>{{ o.nombre }}</strong>
+                  <small>
+                    @if (o.estado === 'Finalizada') { Terminó el {{ formatoFecha(o.fecha_fin_real) }} }
+                    @else { Entrega estimada {{ formatoFecha(o.fecha_fin_estimada) }} }
+                  </small>
+                </div>
+                <span class="obra__porcentaje">{{ o.porcentaje_avance }}%</span>
+                <div class="sg-cota obra__barra">
+                  <span class="sg-cota__relleno" [style.width.%]="o.porcentaje_avance"></span>
+                </div>
+              </div>
+            } @empty {
+              <div class="vacio">
+                <app-icono nombre="obras" />
+                <p>Tu proyecto aún está en planeación. Aquí verás cada obra cuando inicie.</p>
+              </div>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2 class="seccion"><span>02</span> Próximas fechas</h2>
+
+        <ol class="linea-tiempo">
+          @for (f of proximasFechas(); track f.fecha + f.evento) {
+            <li class="evento">
+              <div class="evento__fecha">
+                <strong>{{ dia(f.fecha) }}</strong>
+                <span>{{ mes(f.fecha) }}</span>
+              </div>
+              <div class="evento__datos">
+                <span class="sg-label">{{ faltan(f.fecha) }}</span>
+                <strong>{{ f.evento }}</strong>
+                <small>{{ f.detalle }}</small>
+              </div>
+            </li>
+          } @empty {
+            <li class="vacio">
+              <app-icono nombre="calendario" />
+              <p>No hay fechas próximas.</p>
+            </li>
+          }
+        </ol>
+      </section>
+    </div>
+
+    <!-- ============ 03 · FOTOS DEL AVANCE ============ -->
+    <h2 class="seccion"><span>03</span> Fotos del avance</h2>
+
+    @if (evidencias().length) {
+      <div class="fotos" [class.cargando]="cargando()">
+        @for (e of evidencias(); track e.id) {
+          <button type="button" class="foto" (click)="abrirVisor(e)" [attr.aria-label]="'Ver ' + (e.descripcion || e.tipo)">
+            @if (esImagen(e)) {
+              <img [src]="urlArchivo(e.archivo)" [alt]="e.descripcion || e.obra" loading="lazy">
+            } @else {
+              <span class="foto__tipo"><app-icono [nombre]="esVideo(e) ? 'fotos' : 'archivo'" /> {{ e.tipo }}</span>
+            }
+            <span class="foto__pie">
+              <strong>{{ e.descripcion || e.obra }}</strong>
+              <small>{{ formatoFecha(e.fecha) }} · {{ e.obra }}</small>
+            </span>
+          </button>
+        }
+      </div>
+    } @else {
+      <div class="vacio vacio--suelto">
+        <app-icono nombre="fotos" />
+        <p>Tu arquitecto subirá aquí las fotos y videos del avance.</p>
+      </div>
+    }
+
+    <!-- ============ 04 · PAGOS + 05 · CONTACTO ============ -->
+    <div class="paneles paneles--abajo" [class.cargando]="cargando()">
+
+      <section class="panel">
+        <h2 class="seccion"><span>04</span> Tus pagos</h2>
+
+        <div class="cobro">
+          <div class="cobro__cifras">
+            <div><span class="sg-label">{{ contrato() ? 'Contrato ' + contrato()!.numero_contrato : 'Total' }}</span><strong>{{ dinero(cobro().total) }}</strong></div>
+            <div><span class="sg-label">Pagado</span><strong>{{ dinero(cobro().pagado) }}</strong></div>
+            <div><span class="sg-label">Saldo</span><strong>{{ dinero(cobro().saldo) }}</strong></div>
+          </div>
+          <div class="sg-cota"><span class="sg-cota__relleno" [style.width.%]="cobro().porcentaje"></span></div>
+          <small class="ayuda">
+            {{ cobro().porcentaje }}% pagado
+            @if (cobro().proximo; as px) { · próximo pago {{ dinero(px.monto) }} el {{ formatoFecha(px.fecha) }} }
+          </small>
+        </div>
+
+        @if (pagos().length) {
+          <table class="tabla-pagos">
+            <thead>
+              <tr><th>Fecha</th><th>Concepto</th><th class="der">Monto</th><th>Estado</th></tr>
+            </thead>
+            <tbody>
+              @for (pg of pagos(); track pg.id) {
+                <tr>
+                  <td class="fecha" [class.alerta-texto]="vencido(pg)">{{ formatoFecha(pg.fecha) }}</td>
+                  <td>{{ pg.concepto }}</td>
+                  <td class="der importe">{{ moneda(pg.monto) }}</td>
+                  <td><span class="sg-chip" [class]="claseEstado(pg.estado)">{{ pg.estado }}</span></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <p class="nota">Aún no hay pagos programados.</p>
+        }
+      </section>
+
+      <section class="panel">
+        <h2 class="seccion"><span>05</span> Tu arquitecto</h2>
+
+        <div class="contacto">
+          <span class="contacto__avatar">{{ (p.arquitecto || 'S').charAt(0) }}</span>
+          <div>
+            <strong>{{ p.arquitecto || 'Por asignar' }}</strong>
+            <small>Responsable de tu proyecto</small>
+          </div>
+        </div>
+
+        <div class="contacto__acciones">
+          @if (p.arquitecto_telefono) {
+            <a class="sg-btn sg-btn--chico" [href]="'tel:' + p.arquitecto_telefono"><app-icono nombre="usuarios" /> Llamar</a>
+          }
+          @if (p.arquitecto_correo) {
+            <a class="sg-btn sg-btn--contorno sg-btn--chico" [href]="'mailto:' + p.arquitecto_correo + '?subject=' + p.nombre">
+              <app-icono nombre="archivo" /> Escribir correo
+            </a>
+          }
+        </div>
+
+        <dl class="datos">
+          <div><dt class="sg-label">Inicio</dt><dd>{{ formatoFecha(p.fecha_inicio) }}</dd></div>
+          <div><dt class="sg-label">Entrega</dt><dd>{{ formatoFecha(p.fecha_fin) }}</dd></div>
+          <div class="completo"><dt class="sg-label">Ubicación de la obra</dt><dd>{{ p.ubicacion || '—' }}</dd></div>
+        </dl>
+      </section>
+    </div>
+
+  } @else if (!cargando() && !error()) {
+    <div class="vacio vacio--suelto">
+      <app-icono nombre="proyectos" />
+      <p>Aún no tienes proyectos registrados. Cuando el despacho registre el tuyo, lo verás aquí.</p>
+    </div>
+  }
+</section>
+
+<!-- ============ VISOR DE FOTOS Y VIDEOS ============ -->
+@if (evidenciaVisor(); as e) {
+  <div class="visor" (click)="cerrarVisor()">
+    <button type="button" class="sg-icono-btn visor__cerrar" (click)="cerrarVisor()" aria-label="Cerrar visor">
+      <app-icono nombre="cerrar" />
+    </button>
+    @if (esImagen(e)) {
+      <img [src]="urlArchivo(e.archivo)" [alt]="e.descripcion || 'Foto del avance'" (click)="$event.stopPropagation()">
+    } @else if (esVideo(e)) {
+      <video [src]="urlArchivo(e.archivo)" controls autoplay (click)="$event.stopPropagation()"></video>
+    } @else {
+      <iframe [src]="urlArchivo(e.archivo) | safeUrl" title="Documento" (click)="$event.stopPropagation()"></iframe>
+    }
+    <div class="visor__info">
+      <strong>{{ e.descripcion || e.obra }}</strong> · {{ formatoFecha(e.fecha) }}
+    </div>
+  </div>
+}
