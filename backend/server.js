@@ -41,25 +41,25 @@ app.get('/', (req, res) => {
     });
 });
 
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
-app.listen(PORT, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor SIGOA escuchando en el puerto ${PORT}`);
     // Crea las tablas de notificaciones (si faltan) y arranca los recordatorios automáticos
     notificaciones.iniciar(); // ← NUEVO
     console.log(
-        'Ruta de resumen: http://localhost:3000/api/routes/admin/resumen'
+        `Ruta de resumen: /api/routes/admin/resumen`
     );
     console.log(
-        'Ruta de proyectos: http://localhost:3000/api/routes/proyectos'
+        'Ruta de proyectos: /api/routes/proyectos'
     );
     console.log(
-        'Ruta de obras: http://localhost:3000/api/routes/obras'
+        'Ruta de obras: /api/routes/obras'
     );
     console.log(
-        'Ruta de cotizaciones: http://localhost:3000/api/routes/cotizaciones'
+        'Ruta de cotizaciones: /api/routes/cotizaciones'
     );
     console.log(
-        'Ruta de contratos: http://localhost:3000/api/routes/contratos'
+        'Ruta de contratos: /api/routes/contratos'
     );
 });

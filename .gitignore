@@ -7,9 +7,12 @@
 /bazel-out
 
 # Node
-/node_modules
+**/node_modules/
 npm-debug.log
 yarn-error.log
+**/.env
+**/.env.*
+!**/.env.example
 
 # IDEs and editors
 .idea/
@@ -45,3 +48,4 @@ Thumbs.db
 
 # Notificaciones push: llaves privadas del servidor (cada equipo genera las suyas)
 backend/vapid-keys.json
+backend/uploads/

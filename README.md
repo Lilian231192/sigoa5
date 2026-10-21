@@ -79,6 +79,19 @@ const API_URL = 'https://tu-dominio.com/api/routes';
 
 Si el hosting ya tiene la aplicación compilada, también puedes sustituir ese valor en `dist/sigoa/browser/runtime-config.js` y reiniciar el servidor; no hace falta recompilar. En desarrollo, el valor inicial es `http://localhost:3000/api/routes`. La misma dirección se usa para cargar los archivos subidos.
 
+### Publicar el backend Express
+Para el servicio que muestra `server.js` como archivo de entrada, configura el directorio raíz como `backend` y usa:
+
+| Configuración | Valor |
+|---|---|
+| Versión de Node.js | 22 |
+| Comando de compilación | `npm run build` |
+| Comando de inicio | `npm start` |
+
+El build verifica la sintaxis de `server.js`; la API escucha automáticamente en el puerto que asigne el hosting (`PORT`). En las variables de entorno del servicio configura `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD` y `DB_NAME` con los datos de una base MySQL accesible desde el hosting. No uses las credenciales de desarrollo ni subas contraseñas al repositorio. Para habilitar notificaciones push persistentes, configura también `VAPID_CONTACTO`, `VAPID_PUBLIC_KEY` y `VAPID_PRIVATE_KEY`; toma como referencia `backend/.env.example`.
+
+El backend y la aplicación Angular son servicios separados: publica el backend primero, copia su URL pública en `public/runtime-config.js`, y después compila y publica la aplicación Angular desde la raíz del proyecto.
+
 ---
 
 ##   Dónde está cada cosa
